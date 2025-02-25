@@ -9,6 +9,18 @@ namespace uwbsys
     class Base
     {
     protected:
+        enum NetworkEvent : uint8_t
+        {
+            NETWORK_EVENT_NONE,
+            NETWORK_EVENT_AUTHORIZE,
+            NETWORK_EVENT_NETWORK_UPDATE,
+            NETWORK_EVENT_CLOCK_SYNC,
+            NETWORK_EVENT_TDOA_ACCESS,
+            NETWORK_EVENT_TDOA_GRANT,
+            NETWORK_EVENT_TWR_ACCESS,
+            NETWORK_EVENT_TWR_GRANT
+        };
+
         uint16_t networkAddress;
         uint16_t deviceAddress;
 

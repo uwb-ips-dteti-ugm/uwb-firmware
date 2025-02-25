@@ -1,16 +1,18 @@
-#ifndef __UWB_TAG_H__
-#define __UWB_TAG_H__
+#ifndef __UWB_CLIENT_H__
+#define __UWB_CLIENT_H__
 
 #include <Arduino.h>
+#include <SPI.h>
 #include <DW1000.h>
 #include <dw3000.h>
 #include "base.h"
 
 namespace uwbsys
 {
+    extern SPISettings _fastSPI;
     extern dwt_txconfig_t txconfig_options;
 
-    class TagDW3000 : public Base
+    class ClientDW3000 : public Base
     {
     public:
         /*
@@ -39,10 +41,10 @@ namespace uwbsys
          * @return
          * None
          */
-        void networkConfig(uint16_t networkAddress, uint16_t deviceAddress);
+        void networkConfig(uint16_t networkAddress, uint16_t deviceAddress, uint64_t timeout = 5000UL);
         /*
          * @brief
-         * Set the desired ranging mode for the tag.
+         * Set the desired ranging mode for the client.
          *
          * @param
          * mode Ranging modes: `UWB_RANGING_MODE_TDOA` or `UWB_RANGING_MODE_TWR`
@@ -64,7 +66,7 @@ namespace uwbsys
         bool begin();
         /*
          * @brief
-         * Run an iteration of the UWB tag's task.
+         * Run an iteration of the UWB client's task.
          *
          * @param
          * None
@@ -75,7 +77,7 @@ namespace uwbsys
         void spin();
         /*
          * @brief
-         * Checks whether the tag is connected to a UWB network.
+         * Checks whether the client is connected to a UWB network.
          *
          * @param
          * None
@@ -86,16 +88,6 @@ namespace uwbsys
         bool isNetworkConnected();
 
     private:
-        enum NetworkEvent : uint8_t
-        {
-            NETWORK_EVENT_NONE,
-            NETWORK_EVENT_AUTHORIZE,
-            NETWORK_EVENT_NETWORK_UPDATE,
-            NETWORK_EVENT_CLOCK_SYNC,
-            NETWORK_EVENT_TDOA_ACCESS,
-            NETWORK_EVENT_TWR_ACCESS
-        };
-
         struct NetworkEventParams
         {
             NetworkEvent event;
@@ -107,10 +99,9 @@ namespace uwbsys
         QueueHandle_t networkEventQueue;
         dwt_config_t *dwConfig;
         uint8_t rangingMode = RANGING_MODE_NONE;
-        uint16_t networkAddress;
-        uint16_t deviceAddress;
         uint16_t masterAddress;
-
+        uint64_t timeout;
+        uint64_t lastEventTimestamp = 0;
         bool networkConnected = false;
 
         NetworkEvent getFrameNetworkEvent(uint8_t *frame);
@@ -119,8 +110,9 @@ namespace uwbsys
         void onEventAuthorize(NetworkEventParams *params);
         void onEventNetworkUpdate(NetworkEventParams *params);
         void onEventClockSync(NetworkEventParams *params);
-        void onEventTDoAccess(NetworkEventParams *params);
+        void onEventTDoAAccess(NetworkEventParams *params);
         void onEventTWRAccess(NetworkEventParams *params);
+        void onEventTWRGrant(NetworkEventParams *params);
     };
 }
 
