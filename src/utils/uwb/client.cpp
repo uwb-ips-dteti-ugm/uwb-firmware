@@ -65,7 +65,7 @@ bool ClientDW3000::begin()
 
 void ClientDW3000::spin()
 {
-    ClientDW3000::NetworkEventParams paramBuf;
+    static ClientDW3000::NetworkEventParams paramBuf;
     this->networkEventListen();
     if (xQueueReceive(this->networkEventQueue, &paramBuf, 0) == pdTRUE)
     {
