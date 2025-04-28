@@ -2,82 +2,67 @@
 #define __UWB_SERVER_H__
 
 #include <Arduino.h>
-#include <SPI.h>
-#include <DW1000.h>
-#include <dw3000.h>
 #include "base.h"
 
 namespace uwbsys
 {
-    extern SPISettings _fastSPI;
-    extern dwt_txconfig_t txconfig_options;
-
-    class ServerDW3000 : public Base
+    class DW3000Server : public DW3000Base
     {
     public:
         /*
-         * @brief
-         * Set configuration for the UWB peripheral. If no argument passed, the default is used.
-         *
-         * @param
-         * configuration Configuration struct `(dwt_config_t *)`
-         *
-         * @return
-         * None
-         *
-         * @note
-         * The passed struct can be a temporary scoped variable, since the value will be copied.
+         * @brief   The constructor of the `uwbsys::DW3000Server` class.
+         * @param   clientMax the maximum number of client will be handled
          */
-        void deviceConfig(dwt_config_t *configuration = nullptr);
+        DW3000Server(uint8_t clientMax);
+
         /*
-         * @brief
-         * Set the UWB network configuration, including the network address and the device's address.
-         *
-         * @param
-         * network_addr 2-bytes network address `(uint16_t)`
-         * @param
-         * device_addr 2-bytes device address `(uint16_t)`
-         *
-         * @return
-         * None
+         * @brief   Set configuration for the UWB IC. The default is used if left empty.
+         * @param   config DW3000 configuration parameters
+         * @return  `true` if success, otherwise `false`
+         */
+        bool deviceConfig(dwt_config_t *config = nullptr);
+
+        /*
+         * @brief   Set the UWB network configuration.
+         * @param   networkAddress 2-bytes network address
+         * @param   deviceAddress 2-bytes device address
+         * @return  None
          */
         void networkConfig(uint16_t networkAddress, uint16_t deviceAddress);
+
         /*
-         * @brief
-         * Start the UWB peripheral.
-         *
-         * @param
-         * None
-         *
-         * @return
-         * `true` if success, `false` otherwise `type: bool`
-         */
-        bool begin();
-        /*
-         * @brief
-         * Run an iteration of the UWB server's task.
-         *
-         * @param
-         * None
-         *
-         * @return
-         * None
+         * @brief   Run an iteration of the UWB server routine.
+         * @param   None
+         * @return  None
          */
         void spin();
 
+    protected:
+        /*
+         */
+        bool addClient(uint16_t clientAddress);
+
+        /*
+         */
+        bool deleteClient(uint16_t clientAddress);
+
+        /*
+         */
+        uint8_t getClientNum();
+
+        /*
+         */
+        uint16_t nextClient();
+
+        /*
+         */
+        void authorizeRoutine();
+
     private:
-        QueueHandle_t clientQueue;
-        dwt_config_t *dwConfig;
-
-        void appendClientQueue(uint16_t clientAddress);
-        uint16_t popCyclicClientQueue();
-        NetworkEvent getFrameNetworkEvent(uint8_t *frame);
-
-        void execAuthorize();
-        void execNetworkUpdate();
-        void execClockSync();
-        void execTDoAAccess();
-        void execTWRAccess();
+        uint16_t *clients;
+        uint8_t clientIter;
+        uint8_t clientNum;
+        uint8_t clientMax;
     };
 }
 

@@ -1,23 +1,48 @@
-/* --------------- [ SELECT MODE ] ---------------*/
-// #define __DW1000_TAG_TDOA__
-// #define __DW1000_TAG_TWR__
-// #define __DW1000_ANCHOR__
-// #define __DW3000_TAG_TDOA__
-#define __DW3000_TAG_TWR__
-// #define __DW3000_ANCHOR__
+#include "utils/uwb/server.h"
 
-/* --------------- [ CONFIGURE DEVICE CREDENTIAL ] ---------------*/
-#define UWBIPS_PERSONAL_AREA_NETWORK_ID_1   0xAA
-#define UWBIPS_PERSONAL_AREA_NETWORK_ID_2   0xBB
-#define UWBIPS_DEVICE_ADDRESS_1             0x01
-#define UWBIPS_DEVICE_ADDRESS_2             0x02
+uwbsys::DW3000Server server = uwbsys::DW3000Server(16);
 
+void setup()
+{
+    Serial.begin(115200);
 
-void setup() {
-    
+    if (!server.deviceConfig())
+    {
+        Serial.println("DEVICE CONFIG FAILED");
+        while (1)
+        {
+        }
+    }
+
+    server.networkConfig(0xDEAB, 0x0001);
 }
 
+void main()
+{
+    server.spin();
+    delay(1000);
+}
 
-void loop() {
+#include "utils/uwb/client.h"
 
+uwbsys::DW3000Client client = uwbsys::DW3000Client();
+
+void setup()
+{
+    Serial.begin(115200);
+
+    if (!server.deviceConfig())
+    {
+        Serial.println("DEVICE CONFIG FAILED");
+        while (1)
+        {
+        }
+    }
+
+    client.networkConfig(0x00AB, uwbsys::RANGING_MODE_TWR);
+}
+
+void main()
+{
+    client.spin();
 }
