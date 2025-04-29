@@ -31,7 +31,7 @@ void setup()
 {
     Serial.begin(115200);
 
-    if (!server.deviceConfig())
+    if (!client.deviceConfig())
     {
         Serial.println("DEVICE CONFIG FAILED");
         while (1)
