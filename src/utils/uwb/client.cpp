@@ -36,12 +36,6 @@ void DW3000Client::listen()
 
     if (recvSize > 0)
     {
-        for (size_t i = 0; i < recvSize; ++i)
-        {
-            Serial.printf("%02X ", buffer[i]);
-        }
-        Serial.println();
-
         uint8_t frame[13];
         this->createFrame(
             frame,
@@ -49,7 +43,21 @@ void DW3000Client::listen()
             this->getFrameSourceAddress(buffer),
             FUNCTION_CODE_AUTHORIZE);
 
-        this->send(frame, 13);
+        recvSize = this->sendExpectResponse(frame, 13, buffer, 127);
+
+        if (recvSize > 0)
+        {
+            for (size_t i = 0; i < recvSize; ++i)
+            {
+                Serial.printf("%02X ", buffer[i]);
+            }
+            Serial.println();
+
+            uint16_t networkAddr = this->getFrameNetworkAddress(buffer);
+            this->setNetworkAddress(networkAddr);
+
+            Serial.printf("CONNECTED TO %04X", networkAddr);
+        }
     }
 }
 

@@ -83,10 +83,11 @@ void DW3000Server::authorizeRoutine()
 
     if (recvSize > 0)
     {
-        for (size_t i = 0; i < recvSize; ++i)
-        {
-            Serial.printf("%02X ", buffer[i]);
-        }
-        Serial.println();
+        this->createFrame(
+            frame,
+            13,
+            this->getFrameSourceAddress(buffer),
+            FUNCTION_CODE_AUTHORIZE);
+        this->send(frame, 13);
     }
 }
