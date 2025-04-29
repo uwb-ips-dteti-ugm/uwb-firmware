@@ -113,6 +113,9 @@ bool uwbsys::Base::validateFrame(uint8_t *frame)
     return true;
 }
 
+SPISettings uwbsys::_fastSPI;
+dwt_txconfig_t uwbsys::txconfig_options;
+
 uwbsys::DW3000Base::DW3000Base() : uwbsys::Base()
 {
     this->dwConfig = new dwt_config_t;
