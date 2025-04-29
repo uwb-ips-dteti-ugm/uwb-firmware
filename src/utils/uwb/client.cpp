@@ -16,6 +16,7 @@ bool DW3000Client::deviceConfig(dwt_config_t *config)
 void DW3000Client::networkConfig(uint16_t deviceAddress, RangingMode mode)
 {
     this->setDeviceAddress(deviceAddress);
+    this->setNetworkAddress(0xFFFF);
     this->rangingMode = mode;
 }
 
@@ -40,6 +41,15 @@ void DW3000Client::listen()
             Serial.printf("%02X ", buffer[i]);
         }
         Serial.println();
+
+        uint8_t frame[13];
+        this->createFrame(
+            frame,
+            13,
+            this->getFrameSourceAddress(buffer),
+            FUNCTION_CODE_AUTHORIZE);
+
+        this->send(frame, 13);
     }
 }
 

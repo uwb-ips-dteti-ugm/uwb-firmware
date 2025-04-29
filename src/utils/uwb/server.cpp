@@ -76,13 +76,17 @@ uint16_t DW3000Server::nextClient()
 void DW3000Server::authorizeRoutine()
 {
     uint8_t frame[13];
-    uint8_t buf[13];
+    uint8_t buffer[13];
 
     this->createFrame(frame, 13, 0xFFFF, FUNCTION_CODE_AUTHORIZE);
-    size_t recvSize = this->sendExpectResponse(frame, 13, buf, 13);
+    size_t recvSize = this->sendExpectResponse(frame, 13, buffer, 13);
 
     if (recvSize > 0)
     {
-        uint16_t srcAddr = this->getFrameSourceAddress(buf);
+        for (size_t i = 0; i < recvSize; ++i)
+        {
+            Serial.printf("%02X ", buffer[i]);
+        }
+        Serial.println();
     }
 }
