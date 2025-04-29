@@ -17,7 +17,7 @@ void setup()
     server.networkConfig(0xDEAB, 0x0001);
 }
 
-void main()
+void loop()
 {
     server.spin();
     delay(1000);
@@ -42,7 +42,7 @@ void setup()
     client.networkConfig(0x00AB, uwbsys::RANGING_MODE_TWR);
 }
 
-void main()
+void loop()
 {
     client.spin();
 }
