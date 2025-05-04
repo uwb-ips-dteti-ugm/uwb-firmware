@@ -1,10 +1,6 @@
 #ifndef __UWB_CLIENT_H__
 #define __UWB_CLIENT_H__
 
-#include <Arduino.h>
-#include <SPI.h>
-#include <DW1000.h>
-#include <dw3000.h>
 #include "base.h"
 
 namespace uwbsys
@@ -14,8 +10,9 @@ namespace uwbsys
     public:
         /*
          * @brief   The default constructor of the `uwbsys::DW3000Client` class.
+         * @param   timeout the time (in milliseconds) until disconnected from network
          */
-        DW3000Client();
+        DW3000Client(uint64_t timeout = 5000);
 
         /*
          * @brief   Set configuration for the UWB IC. The default is used if left empty.
@@ -65,24 +62,35 @@ namespace uwbsys
 
         /*
          */
-        void onEventTDoAAccess();
+        void onEventTDOASchedule();
+
+        /*
+         */
+        void onEventTWRSchedule();
 
         /*
          */
         void onEventTWRAccess();
 
+        /*
+         */
+        void timeoutHandle();
+
     private:
-        QueueHandle_t eventQueue;
         RangingMode rangingMode;
         bool connected;
-    };
+        uint16_t serverAddress;
+        uint64_t connTimeout;
+        uint64_t connTimeoutTs;
+        uint8_t txBuffer[127];
+        uint8_t rxBuffer[127];
 
-    struct ClientEventParam
-    {
-        uint8_t *frame;
-
-        ClientEventParam();
-        ~ClientEventParam();
+        /*
+         * @brief Perform TWR to a target address. This method is used because TWR is a time critical task.
+         * @param targetAddress address to target
+         * @return None
+         */
+        bool twrServe(uint16_t targetAddress);
     };
 }
 

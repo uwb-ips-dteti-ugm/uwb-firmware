@@ -1,9 +1,12 @@
 #include "base.h"
 
+SPISettings uwbsys::_fastSPI;
+dwt_txconfig_t uwbsys::txconfig_options;
+
 uwbsys::Base::Base()
 {
-    this->networkAddress = 0xFF;
-    this->deviceAddress = 0xFF;
+    this->networkAddress = 0xFFFF;
+    this->deviceAddress = 0xFFFF;
     this->operationMode = uwbsys::OPERATION_MODE_NONE;
 }
 
@@ -103,18 +106,15 @@ bool uwbsys::Base::validateFrame(uint8_t *frame)
         return false;
 
     uint16_t tempAddress = this->getFrameNetworkAddress(frame);
-    if (networkAddress != this->networkAddress)
+    if (tempAddress != this->networkAddress)
         return false;
 
     tempAddress = this->getFrameDestinationAddress(frame);
-    if (!((tempAddress == this->deviceAddress) || (tempAddress == 0xFFFF)))
+    if ((tempAddress != this->deviceAddress) && (tempAddress != 0xFFFF))
         return false;
 
     return true;
 }
-
-SPISettings uwbsys::_fastSPI;
-dwt_txconfig_t uwbsys::txconfig_options;
 
 uwbsys::DW3000Base::DW3000Base() : uwbsys::Base()
 {
@@ -132,8 +132,10 @@ uwbsys::DW3000Base::DW3000Base() : uwbsys::Base()
     this->dwConfig->stsMode = DW3000_STS_MODE;
     this->dwConfig->stsLength = DW3000_STS_LENGTH;
     this->dwConfig->pdoaMode = DW3000_PDOA_MODE;
+
     this->seqCnt = 0;
     this->statusReg = 0;
+    this->rxHeld = false;
 }
 
 bool uwbsys::DW3000Base::begin(dwt_config_t *config)
@@ -155,7 +157,7 @@ bool uwbsys::DW3000Base::begin(dwt_config_t *config)
     if (dwt_configure(this->dwConfig) == DWT_ERROR)
         return false;
 
-    dwt_configuretxrf(&txconfig_options);
+    dwt_configuretxrf(&uwbsys::txconfig_options);
     dwt_setleds(DWT_LEDS_ENABLE | DWT_LEDS_INIT_BLINK);
     dwt_setrxantennadelay(DW3000_RX_ANTENNA_DELAY_UUS);
     dwt_settxantennadelay(DW3000_TX_ANTENNA_DELAY_UUS);
@@ -190,7 +192,6 @@ bool uwbsys::DW3000Base::sendDelayed(uint8_t *frame, size_t frameSize, uint32_t 
     frame[uwbsys::FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
 
     dwt_setdelayedtrxtime(delay);
-    dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
     dwt_writetxdata(frameSize, frame, 0);
     dwt_writetxfctrl(frameSize, 0, (isRanging ? 1 : 0));
 
@@ -264,4 +265,47 @@ size_t uwbsys::DW3000Base::receive(uint8_t *buffer, size_t bufferSize, uint32_t 
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
 
     return 0;
+}
+
+void uwbsys::DW3000Base::receiveHold()
+{
+    if (!this->rxHeld)
+    {
+        dwt_setrxtimeout(0);
+        dwt_rxenable(DWT_START_RX_IMMEDIATE);
+        this->rxHeld = true;
+    }
+}
+
+bool uwbsys::DW3000Base::receiveAvailable()
+{
+    if (!((this->statusReg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_ERR)))
+    {
+        return false;
+    }
+    else if (this->statusReg & SYS_STATUS_RXFCG_BIT_MASK)
+    {
+        dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG_BIT_MASK);
+        this->rxHeld = false;
+        return true;
+    }
+    else
+    {
+        dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
+        this->rxHeld = false;
+        return false;
+    }
+}
+
+size_t uwbsys::DW3000Base::receiveCollect(uint8_t *buffer, size_t bufferSize)
+{
+    size_t frameLength = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
+
+    if (frameLength <= bufferSize)
+    {
+        dwt_readrxdata(buffer, frameLength, 0);
+        return frameLength;
+    }
+    else
+        return 0;
 }

@@ -1,15 +1,15 @@
 #ifndef __UWB_BASE_H__
 #define __UWB_BASE_H__
 
-#include <Arduino.h>
 #include <SPI.h>
-#include <DW1000.h>
-#include <dw3000.h>
 #include "config.h"
 #include "enum.h"
 
 namespace uwbsys
 {
+    extern SPISettings _fastSPI;
+    extern dwt_txconfig_t txconfig_options;
+
     class Base
     {
     public:
@@ -175,7 +175,7 @@ namespace uwbsys
         size_t sendExpectResponse(uint8_t *frame, size_t frameSize, uint8_t *buffer, size_t bufferSize, bool isRanging = false, uint32_t rxOnTime = 1, uint32_t rxTimeout = 1000);
 
         /*
-         * @brief   Receive an UWB frame. Set the timeout to 0 to wait for frame indefinitely.
+         * @brief   Receive an UWB frame (blocking). Set the timeout to 0 to wait for frame indefinitely.
          * @param   buffer the buffer to contain the frame
          * @param   bufferSize the size of the buffer
          * @param   timeout time (in microseconds) until timeout
@@ -183,14 +183,37 @@ namespace uwbsys
          */
         size_t receive(uint8_t *buffer, size_t bufferSize, uint32_t timeout = 0);
 
+        /*
+         * @brief   Receive an UWB frame until received (non-blocking).
+         *          Check frame availability with `receiveAvailable()`.
+         *          Get available frame with `receiveCollect()`.
+         * @param   None
+         * @return  None
+         * @note    Only receive the first incoming frame.
+         */
+        void receiveHold();
+
+        /*
+         * @brief   Check the incoming frame existence from `receiveHold()`.
+         * @param   None
+         * @return  `true` if exist, else `false`
+         */
+        bool receiveAvailable();
+
+        /*
+         * @brief   Collect the incoming frame from `receiveHold()`.
+         * @param   buffer the buffer to store the frame
+         * @param   bufferSize the size of the buffer
+         * @return  The size of the received frame
+         */
+        size_t receiveCollect(uint8_t *buffer, size_t bufferSize);
+
     private:
         dwt_config_t *dwConfig;
         uint8_t seqCnt;
         uint32_t statusReg;
+        bool rxHeld;
     };
-
-    extern SPISettings _fastSPI;
-    extern dwt_txconfig_t txconfig_options;
 }
 
 #endif
