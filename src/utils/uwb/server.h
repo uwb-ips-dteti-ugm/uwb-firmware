@@ -38,6 +38,7 @@ namespace uwbsys
 
     protected:
         /*
+         * @brief   Client info including address, ranging mode, and its latest interaction timestamp with the server.
          */
         struct ClientInfo
         {
@@ -46,10 +47,14 @@ namespace uwbsys
             uint64_t lastUpdate;
 
             /*
+             * @brief Default constructor of `DW3000Server::ClientInfo`.
              */
             ClientInfo();
         };
 
+        /*
+         * @brief   Struct of TWR data to contain. Including timestamp, two addresses, and the distance.
+         */
         struct ClientTWRData
         {
             uint32_t timestamp;
@@ -58,57 +63,84 @@ namespace uwbsys
             double distance;
 
             /*
+             * @brief Default constructor of `DW3000Server::ClientTWRData`.
              */
             ClientTWRData();
         };
 
         /*
+         * @brief   Adds new client whenever the maximum has yet reached.
+         * @param   clientAddress the client's address
+         * @param   mode the client's ranging mode
+         * @return  `true` if success
          */
         bool addClient(uint16_t clientAddress, RangingMode mode);
 
         /*
+         * @brief   Deletes existing client.
+         * @oaram   clientAddress the client's address
+         * @return  `true` if success
          */
         bool deleteClient(uint16_t clientAddress);
 
         /*
+         * @brief   Deletes existing client from its index in the queue.
+         * @param   index its index
+         * @return  `true` if success
          */
         bool deleteClientByIndex(uint8_t index);
 
         /*
+         * @brief   Checks whether the client address exists or not.
+         * @param   clientAddress the client's address
+         * @return  `true` if the client does exist
          */
         bool existClient(uint16_t clientAddress);
 
         /*
-         */
-        ClientInfo nextClient();
-
-        /*
+         * @brief   Retrieves current number of clients.
+         * @param   None
+         * @return  number of clients
          */
         uint8_t getClientNum();
 
         /*
+         * @brief   Routine in authorization period.
+         * @param   None
+         * @return  None
          */
         void authorizeRoutine();
 
         /*
+         * @brief   Routine in network update period.
+         * @param   None
+         * @return  None
          */
         void networkUpdateRoutine();
 
         /*
+         * @brief   Routine in clock synchronization period.
+         * @param   None
+         * @return  None
          */
         void clockSyncRoutine();
 
         /*
+         * @brief   Routine in TDOA scheduling period.
+         * @param   None
+         * @return  None
          */
         void tdoaScheduleRoutine();
 
         /*
+         * @brief   Routine in TWR scheduling period.
+         * @param   None
+         * @return  None
          */
         void twrScheduleRoutine();
 
     private:
         ClientInfo *clients;
-        uint8_t clientIter;
         uint8_t clientNum;
         uint8_t clientMax;
         uint64_t clientTimeout;
@@ -121,13 +153,16 @@ namespace uwbsys
         uint8_t rxBuffer[127];
 
         /*
-         * @brief Perform TWR to a target address. This method is used because TWR is a time critical task.
-         * @param targetAddress address to target
-         * @return None
+         * @brief   Performs TWR to a target address. This method is used because TWR is a time critical task.
+         * @param   targetAddress address to serve the TWR from
+         * @return  None
          */
         bool twrServe(uint16_t targetAddress);
 
         /*
+         * @brief   Add new TWR data in the queue. The latest data will be replaced after the queue is full.
+         * @param   data the data to append
+         * @return  None
          */
         void appendTWRData(ClientTWRData *data);
     };

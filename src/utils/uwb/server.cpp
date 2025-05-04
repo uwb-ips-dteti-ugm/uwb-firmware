@@ -4,7 +4,6 @@ using namespace uwbsys;
 DW3000Server::DW3000Server(uint8_t clientMax, uint64_t timeout, uint16_t queueSize) : DW3000Base::DW3000Base()
 {
     this->clients = new DW3000Server::ClientInfo[clientMax];
-    this->clientIter = 0;
     this->clientNum = 0;
     this->clientMax = clientMax;
     this->clientTimeout = timeout;
@@ -78,9 +77,6 @@ bool DW3000Server::deleteClient(uint16_t clientAddress)
             }
             this->clientNum--;
 
-            if (this->clientIter > i || this->clientIter == this->clientNum)
-                this->clientIter--;
-
             return true;
         }
     }
@@ -101,9 +97,6 @@ bool DW3000Server::deleteClientByIndex(uint8_t index)
     }
     this->clientNum--;
 
-    if (this->clientIter > index || this->clientIter == this->clientNum)
-        this->clientIter--;
-
     return true;
 }
 
@@ -115,13 +108,6 @@ bool DW3000Server::existClient(uint16_t clientAddress)
             return true;
     }
     return false;
-}
-
-DW3000Server::ClientInfo DW3000Server::nextClient()
-{
-    DW3000Server::ClientInfo info = this->clients[this->clientIter];
-    this->clientIter = (this->clientIter + 1) % this->clientNum;
-    return info;
 }
 
 uint8_t DW3000Server::getClientNum()
@@ -254,7 +240,7 @@ void DW3000Server::twrScheduleRoutine()
             this->send(this->txBuffer, frameSize);
 
             uint8_t sigCnt = 0;
-            while (sigCnt < 25)
+            while (sigCnt < 21)
             {
                 this->receive(this->rxBuffer, 127, 1000);
                 if ((this->validateFrame(this->rxBuffer)) &&

@@ -45,34 +45,58 @@ namespace uwbsys
 
     protected:
         /*
+         * @brief   Listens to any incoming UWB frame.
+         * @param   None
+         * @return  None
          */
         void listen();
 
         /*
+         * @brief   Callback on authorization event.
+         * @param   None
+         * @return  None
          */
         void onEventAuthorize();
 
         /*
+         * @brief   Callback on network update event.
+         * @param   None
+         * @return  None
          */
         void onEventNetworkUpdate();
 
         /*
+         * @brief   Callback on clock synchronization event.
+         * @param   None
+         * @return  None
          */
         void onEventClockSync();
 
         /*
+         * @brief   Callback on TDOA schedule event.
+         * @param   None
+         * @return  None
          */
         void onEventTDOASchedule();
 
         /*
+         * @brief   Callback on TWR schedule event.
+         * @param   None
+         * @return  None
          */
         void onEventTWRSchedule();
 
         /*
+         * @brief   Callback on TWR access event.
+         * @param   None
+         * @return  None
          */
         void onEventTWRAccess();
 
         /*
+         * @brief   Handles timeout.
+         * @param   None
+         * @return  None
          */
         void timeoutHandle();
 
@@ -86,7 +110,7 @@ namespace uwbsys
         uint8_t rxBuffer[127];
 
         /*
-         * @brief Perform TWR to a target address. This method is used because TWR is a time critical task.
+         * @brief   Performs TWR to a target address. This method is used because TWR is a time critical task.
          * @param targetAddress address to target
          * @return None
          */
