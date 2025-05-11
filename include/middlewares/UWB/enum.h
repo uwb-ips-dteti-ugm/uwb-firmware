@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 
-namespace uwbsys
+namespace uwb
 {
     enum FrameIndex : uint8_t
     {

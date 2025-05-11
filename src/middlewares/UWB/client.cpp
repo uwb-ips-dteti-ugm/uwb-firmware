@@ -1,5 +1,5 @@
-#include "client.h"
-using namespace uwbsys;
+#include "middlewares/UWB/client.h"
+using namespace uwb;
 
 DW3000Client::DW3000Client(uint64_t timeout) : DW3000Base::DW3000Base()
 {
@@ -139,7 +139,7 @@ void DW3000Client::onEventTWRSchedule()
     static double tof;
     static double dist;
 
-    if ((!this->connected) || (!this->validateFrame(this->rxBuffer)) || (this->rangingMode != RANGING_MODE_TWR))
+    if ((!this->connected) || (!this->validateFrame(this->rxBuffer)))
         return;
 
     uint16_t targetAddr = this->getFrameSourceAddress(this->rxBuffer);
@@ -190,7 +190,7 @@ void DW3000Client::onEventTWRSchedule()
 
 void DW3000Client::onEventTWRAccess()
 {
-    if ((!this->connected) || (!this->validateFrame(this->rxBuffer)) || (this->rangingMode != RANGING_MODE_TWR))
+    if ((!this->connected) || (!this->validateFrame(this->rxBuffer)))
         return;
 
     bool retrieved = false;

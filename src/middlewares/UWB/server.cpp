@@ -1,16 +1,30 @@
-#include "server.h"
-using namespace uwbsys;
+#include "middlewares/UWB/server.h"
+using namespace uwb;
 
-DW3000Server::DW3000Server(uint8_t clientMax, uint64_t timeout, uint16_t queueSize) : DW3000Base::DW3000Base()
+DW3000Server::ClientInfo::ClientInfo()
+{
+    this->addr = 0xFFFF;
+    this->mode = RANGING_MODE_NONE;
+    this->lastUpdate = 0;
+}
+
+DW3000Server::TWRData::TWRData()
+{
+    this->timestamp = millis();
+    this->addr1 = 0xFFFF;
+    this->addr2 = 0xFFFF;
+    this->distance = 0.0;
+}
+
+DW3000Server::DW3000Server(uint8_t clientMax, uint16_t twrQueueSize, uint64_t timeout) : DW3000Base::DW3000Base()
 {
     this->clients = new DW3000Server::ClientInfo[clientMax];
     this->clientNum = 0;
     this->clientMax = clientMax;
     this->clientTimeout = timeout;
 
-    this->clientTWRQueue = xQueueCreate(queueSize, sizeof(DW3000Server::ClientTWRData));
-    this->queueCnt = 0;
-    this->queueSize = queueSize;
+    this->clientTWRQueue = xQueueCreate(twrQueueSize, sizeof(DW3000Server::TWRData));
+    this->clientTWRQueueSize = twrQueueSize;
 }
 
 bool DW3000Server::deviceConfig(dwt_config_t *config)
@@ -33,19 +47,33 @@ void DW3000Server::spin()
     this->twrScheduleRoutine();
 }
 
-DW3000Server::ClientInfo::ClientInfo()
+uint8_t DW3000Server::getClientNum()
 {
-    this->addr = 0xFFFF;
-    this->mode = uwbsys::RANGING_MODE_NONE;
-    this->lastUpdate = 0;
+    return this->clientNum;
 }
 
-DW3000Server::ClientTWRData::ClientTWRData()
+uint8_t DW3000Server::getClients(DW3000Server::ClientInfo *buffer, size_t bufferLen)
 {
-    this->timestamp = millis();
-    this->addr1 = 0xFFFF;
-    this->addr2 = 0xFFFF;
-    this->distance = 0.0;
+    if ((bufferLen == 0xFFFFFFFF) || (bufferLen >= this->clientNum))
+    {
+        memcpy(buffer, this->clients, sizeof(DW3000Server::ClientInfo) * this->clientNum);
+        return this->clientNum;
+    }
+    else
+    {
+        memcpy(buffer, this->clients, sizeof(DW3000Server::ClientInfo) * bufferLen);
+        return (uint8_t)(bufferLen & 0xFF);
+    }
+}
+
+uint16_t DW3000Server::isTWRDataAvailable()
+{
+    return (uint16_t)(uxQueueMessagesWaiting(this->clientTWRQueue));
+}
+
+bool DW3000Server::getTWRData(DW3000Server::TWRData *buffer)
+{
+    return (bool)xQueueReceive(this->clientTWRQueue, buffer, 0);
 }
 
 bool DW3000Server::addClient(uint16_t clientAddress, RangingMode mode)
@@ -108,11 +136,6 @@ bool DW3000Server::existClient(uint16_t clientAddress)
             return true;
     }
     return false;
-}
-
-uint8_t DW3000Server::getClientNum()
-{
-    return this->clientNum;
 }
 
 void DW3000Server::authorizeRoutine()
@@ -184,58 +207,77 @@ void DW3000Server::tdoaScheduleRoutine()
 
 void DW3000Server::twrScheduleRoutine()
 {
-    for (uint8_t i = 0; i < this->clientNum; ++i)
+    static uint8_t clientNumBuf = 0;
+    static uint16_t totalIter = 0;
+    static uint16_t twrIter = 0;
+    static uint16_t idx = 0;
+    static uint16_t jdx = 1;
+
+    if (twrIter == totalIter)
     {
-        bool retrieved = false;
-        double dataCnt = 0.0;
-        double dist = 0.0;
+        twrIter = 0;
+        idx = 0;
+        jdx = 1;
 
-        for (uint8_t j = 0; j < 5; ++j)
+        if (clientNumBuf != this->clientNum)
         {
-            if (!this->twrServe(this->clients[i].addr))
-                continue;
-
-            if (this->receive(this->rxBuffer, 127, 10000) == 0)
-                continue;
-
-            if ((this->validateFrame(this->rxBuffer)) &&
-                this->getFrameFunctionCode(this->rxBuffer) == (uint8_t)FUNCTION_CODE_TWR_ACKNOWLEDGE)
-            {
-                double recvDist;
-                this->getFramePayload(
-                    (uint8_t *)&recvDist,
-                    sizeof(double),
-                    this->rxBuffer);
-
-                dataCnt += 1.0;
-                dist += recvDist;
-                retrieved = true;
-            }
-        }
-
-        if (retrieved)
-        {
-            dist /= dataCnt;
-            DW3000Server::ClientTWRData data;
-            data.addr1 = this->clients[i].addr;
-            data.addr2 = this->getDeviceAddress();
-            data.distance = dist;
-
-            Serial.printf("%04X -> %04X: %3.2f m\n\n", data.addr1, data.addr2, data.distance);
+            clientNumBuf = this->clientNum;
+            totalIter = this->clientNum + ((this->clientNum < 2) ? 0 : ((this->clientNum * (this->clientNum - 1)) / 2));
         }
     }
 
-    for (uint8_t i = 0; i < this->clientNum; ++i)
+    for (uint16_t i = 0; i < this->clientTWRQueueSize; ++i)
     {
-        for (uint8_t j = i + 1; j < this->clientNum; ++j)
+        if (twrIter < clientNumBuf)
+        {
+            bool retrieved = false;
+            double dataCnt = 0.0;
+            double dist = 0.0;
+
+            for (uint8_t j = 0; j < 5; ++j)
+            {
+                if (!this->twrServe(this->clients[twrIter].addr))
+                    continue;
+
+                if (this->receive(this->rxBuffer, 127, 10000) == 0)
+                    continue;
+
+                if ((this->validateFrame(this->rxBuffer)) &&
+                    this->getFrameFunctionCode(this->rxBuffer) == (uint8_t)FUNCTION_CODE_TWR_ACKNOWLEDGE)
+                {
+                    double recvDist;
+                    this->getFramePayload(
+                        (uint8_t *)&recvDist,
+                        sizeof(double),
+                        this->rxBuffer);
+
+                    dataCnt += 1.0;
+                    dist += recvDist;
+                    retrieved = true;
+                }
+            }
+
+            if (retrieved)
+            {
+                dist /= dataCnt;
+                DW3000Server::TWRData data;
+                data.addr1 = this->clients[i].addr;
+                data.addr2 = this->getDeviceAddress();
+                data.distance = dist;
+
+                this->appendTWRData(&data);
+            }
+        }
+
+        else if (twrIter < totalIter)
         {
             size_t frameSize = this->createFrame(
                 this->txBuffer,
                 127,
-                this->clients[i].addr,
+                this->clients[idx].addr,
                 FUNCTION_CODE_TWR_ACCESS,
                 2,
-                (uint8_t *)&this->clients[j].addr);
+                (uint8_t *)&this->clients[jdx].addr);
 
             this->send(this->txBuffer, frameSize);
 
@@ -252,18 +294,30 @@ void DW3000Server::twrScheduleRoutine()
                         sizeof(double),
                         this->rxBuffer);
 
-                    DW3000Server::ClientTWRData data;
-                    data.addr1 = this->clients[i].addr;
-                    data.addr2 = this->clients[j].addr;
+                    DW3000Server::TWRData data;
+                    data.addr1 = this->clients[jdx].addr;
+                    data.addr2 = this->clients[idx].addr;
                     data.distance = recvDist;
 
-                    Serial.printf("%04X -> %04X: %3.2f m\n\n", data.addr1, data.addr2, data.distance);
+                    this->appendTWRData(&data);
                     break;
                 }
                 else
                     sigCnt++;
             }
+
+            jdx++;
+            if (jdx == clientNumBuf)
+            {
+                idx++;
+                jdx = idx + 1;
+            }
         }
+
+        else
+            break;
+
+        twrIter++;
     }
 }
 
@@ -344,14 +398,13 @@ bool DW3000Server::twrServe(uint16_t targetAddress)
     }
 }
 
-void DW3000Server::appendTWRData(DW3000Server::ClientTWRData *data)
+void DW3000Server::appendTWRData(DW3000Server::TWRData *data)
 {
-    static DW3000Server::ClientTWRData dump;
+    static DW3000Server::TWRData dump;
 
-    if (this->queueCnt < this->queueSize)
+    if (uxQueueMessagesWaiting(this->clientTWRQueue) < this->clientTWRQueueSize)
     {
         xQueueSend(this->clientTWRQueue, data, 0);
-        this->queueCnt++;
     }
     else
     {

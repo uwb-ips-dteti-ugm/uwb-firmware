@@ -3,7 +3,7 @@
 
 #include "base.h"
 
-namespace uwbsys
+namespace uwb
 {
     class DW3000Client : public DW3000Base
     {

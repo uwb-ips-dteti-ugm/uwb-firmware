@@ -5,11 +5,8 @@
 #include "config.h"
 #include "enum.h"
 
-namespace uwbsys
+namespace uwb
 {
-    extern SPISettings _fastSPI;
-    extern dwt_txconfig_t txconfig_options;
-
     class Base
     {
     public:

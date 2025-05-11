@@ -1,46 +1,47 @@
-#include "base.h"
+#include "middlewares/UWB/base.h"
+using namespace uwb;
 
-SPISettings uwbsys::_fastSPI;
-dwt_txconfig_t uwbsys::txconfig_options;
+extern SPISettings _fastSPI;
+extern dwt_txconfig_t txconfig_options;
 
-uwbsys::Base::Base()
+Base::Base()
 {
     this->networkAddress = 0xFFFF;
     this->deviceAddress = 0xFFFF;
-    this->operationMode = uwbsys::OPERATION_MODE_NONE;
+    this->operationMode = OPERATION_MODE_NONE;
 }
 
-void uwbsys::Base::setNetworkAddress(uint16_t networkAddress)
+void Base::setNetworkAddress(uint16_t networkAddress)
 {
     this->networkAddress = networkAddress;
 }
 
-void uwbsys::Base::setDeviceAddress(uint16_t deviceAddress)
+void Base::setDeviceAddress(uint16_t deviceAddress)
 {
     this->deviceAddress = deviceAddress;
 }
 
-void uwbsys::Base::setOperationMode(uwbsys::OperationMode operationMode)
+void Base::setOperationMode(OperationMode operationMode)
 {
     this->operationMode = operationMode;
 }
 
-uint16_t uwbsys::Base::getNetworkAddress()
+uint16_t Base::getNetworkAddress()
 {
     return this->networkAddress;
 }
 
-uint16_t uwbsys::Base::getDeviceAddress()
+uint16_t Base::getDeviceAddress()
 {
     return this->deviceAddress;
 }
 
-uwbsys::OperationMode uwbsys::Base::getOperationMode()
+OperationMode Base::getOperationMode()
 {
     return this->operationMode;
 }
 
-size_t uwbsys::Base::createFrame(uint8_t *buffer, size_t bufferSize, uint16_t destinationAddress, uint8_t functionCode, uint8_t payloadLength, uint8_t *payload)
+size_t Base::createFrame(uint8_t *buffer, size_t bufferSize, uint16_t destinationAddress, uint8_t functionCode, uint8_t payloadLength, uint8_t *payload)
 {
     size_t totalLength = 13 + (size_t)payloadLength;
     if (totalLength > 127 || totalLength > bufferSize)
@@ -50,57 +51,57 @@ size_t uwbsys::Base::createFrame(uint8_t *buffer, size_t bufferSize, uint16_t de
     buffer[1] = 0x88;
     buffer[totalLength - 1] = 0x00;
     buffer[totalLength - 2] = 0x00;
-    buffer[uwbsys::FRAME_INDEX_FUNCTION_CODE] = functionCode;
-    buffer[uwbsys::FRAME_INDEX_PAYLOAD] = payloadLength;
-    memcpy(buffer + uwbsys::FRAME_INDEX_NETWORK_ADDRESS, &this->networkAddress, sizeof(uint16_t));
-    memcpy(buffer + uwbsys::FRAME_INDEX_DESTINATION_ADDRESS, &destinationAddress, sizeof(uint16_t));
-    memcpy(buffer + uwbsys::FRAME_INDEX_SOURCE_ADDRESS, &this->deviceAddress, sizeof(uint16_t));
+    buffer[FRAME_INDEX_FUNCTION_CODE] = functionCode;
+    buffer[FRAME_INDEX_PAYLOAD] = payloadLength;
+    memcpy(buffer + FRAME_INDEX_NETWORK_ADDRESS, &this->networkAddress, sizeof(uint16_t));
+    memcpy(buffer + FRAME_INDEX_DESTINATION_ADDRESS, &destinationAddress, sizeof(uint16_t));
+    memcpy(buffer + FRAME_INDEX_SOURCE_ADDRESS, &this->deviceAddress, sizeof(uint16_t));
 
     if (payload != nullptr)
-        memcpy(buffer + uwbsys::FRAME_INDEX_PAYLOAD + 1, payload, (size_t)payloadLength);
+        memcpy(buffer + FRAME_INDEX_PAYLOAD + 1, payload, (size_t)payloadLength);
 
     return totalLength;
 }
 
-uint16_t uwbsys::Base::getFrameNetworkAddress(uint8_t *frame)
+uint16_t Base::getFrameNetworkAddress(uint8_t *frame)
 {
     uint16_t retVal;
-    memcpy(&retVal, frame + uwbsys::FRAME_INDEX_NETWORK_ADDRESS, sizeof(uint16_t));
+    memcpy(&retVal, frame + FRAME_INDEX_NETWORK_ADDRESS, sizeof(uint16_t));
     return retVal;
 }
 
-uint16_t uwbsys::Base::getFrameDestinationAddress(uint8_t *frame)
+uint16_t Base::getFrameDestinationAddress(uint8_t *frame)
 {
     uint16_t retVal;
-    memcpy(&retVal, frame + uwbsys::FRAME_INDEX_DESTINATION_ADDRESS, sizeof(uint16_t));
+    memcpy(&retVal, frame + FRAME_INDEX_DESTINATION_ADDRESS, sizeof(uint16_t));
     return retVal;
 }
 
-uint16_t uwbsys::Base::getFrameSourceAddress(uint8_t *frame)
+uint16_t Base::getFrameSourceAddress(uint8_t *frame)
 {
     uint16_t retVal;
-    memcpy(&retVal, frame + uwbsys::FRAME_INDEX_SOURCE_ADDRESS, sizeof(uint16_t));
+    memcpy(&retVal, frame + FRAME_INDEX_SOURCE_ADDRESS, sizeof(uint16_t));
     return retVal;
 }
 
-uint8_t uwbsys::Base::getFrameFunctionCode(uint8_t *frame)
+uint8_t Base::getFrameFunctionCode(uint8_t *frame)
 {
-    return frame[uwbsys::FRAME_INDEX_FUNCTION_CODE];
+    return frame[FRAME_INDEX_FUNCTION_CODE];
 }
 
-size_t uwbsys::Base::getFramePayload(uint8_t *buffer, size_t bufferSize, uint8_t *frame)
+size_t Base::getFramePayload(uint8_t *buffer, size_t bufferSize, uint8_t *frame)
 {
-    size_t payloadLength = (size_t)frame[uwbsys::FRAME_INDEX_PAYLOAD];
+    size_t payloadLength = (size_t)frame[FRAME_INDEX_PAYLOAD];
     if (payloadLength == 0 || payloadLength > bufferSize)
         return 0;
     else
     {
-        memcpy(buffer, frame + uwbsys::FRAME_INDEX_PAYLOAD + 1, payloadLength);
+        memcpy(buffer, frame + FRAME_INDEX_PAYLOAD + 1, payloadLength);
         return payloadLength;
     }
 }
 
-bool uwbsys::Base::validateFrame(uint8_t *frame)
+bool Base::validateFrame(uint8_t *frame)
 {
     if (!(frame[0] == 0x41 && frame[1] == 0x88))
         return false;
@@ -116,7 +117,7 @@ bool uwbsys::Base::validateFrame(uint8_t *frame)
     return true;
 }
 
-uwbsys::DW3000Base::DW3000Base() : uwbsys::Base()
+DW3000Base::DW3000Base() : Base()
 {
     this->dwConfig = new dwt_config_t;
     this->dwConfig->chan = DW3000_CHANNEL;
@@ -138,12 +139,12 @@ uwbsys::DW3000Base::DW3000Base() : uwbsys::Base()
     this->rxHeld = false;
 }
 
-bool uwbsys::DW3000Base::begin(dwt_config_t *config)
+bool DW3000Base::begin(dwt_config_t *config)
 {
     if (config != nullptr)
         memcpy(this->dwConfig, config, sizeof(dwt_config_t));
 
-    uwbsys::_fastSPI = SPISettings(16000000L, MSBFIRST, SPI_MODE0);
+    _fastSPI = SPISettings(16000000L, MSBFIRST, SPI_MODE0);
     spiBegin(DW3000_PIN_IRQ, DW3000_PIN_RST);
     spiSelect(DW3000_PIN_SS);
     vTaskDelay(pdMS_TO_TICKS(2));
@@ -157,7 +158,7 @@ bool uwbsys::DW3000Base::begin(dwt_config_t *config)
     if (dwt_configure(this->dwConfig) == DWT_ERROR)
         return false;
 
-    dwt_configuretxrf(&uwbsys::txconfig_options);
+    dwt_configuretxrf(&txconfig_options);
     dwt_setleds(DWT_LEDS_ENABLE | DWT_LEDS_INIT_BLINK);
     dwt_setrxantennadelay(DW3000_RX_ANTENNA_DELAY_UUS);
     dwt_settxantennadelay(DW3000_TX_ANTENNA_DELAY_UUS);
@@ -165,9 +166,9 @@ bool uwbsys::DW3000Base::begin(dwt_config_t *config)
     return true;
 }
 
-bool uwbsys::DW3000Base::send(uint8_t *frame, size_t frameSize, bool isRanging)
+bool DW3000Base::send(uint8_t *frame, size_t frameSize, bool isRanging)
 {
-    frame[uwbsys::FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
+    frame[FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
 
     dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS_BIT_MASK);
     dwt_writetxdata(frameSize, frame, 0);
@@ -187,9 +188,9 @@ bool uwbsys::DW3000Base::send(uint8_t *frame, size_t frameSize, bool isRanging)
     }
 }
 
-bool uwbsys::DW3000Base::sendDelayed(uint8_t *frame, size_t frameSize, uint32_t delay, bool isRanging)
+bool DW3000Base::sendDelayed(uint8_t *frame, size_t frameSize, uint32_t delay, bool isRanging)
 {
-    frame[uwbsys::FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
+    frame[FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
 
     dwt_setdelayedtrxtime(delay);
     dwt_writetxdata(frameSize, frame, 0);
@@ -209,9 +210,9 @@ bool uwbsys::DW3000Base::sendDelayed(uint8_t *frame, size_t frameSize, uint32_t 
     }
 }
 
-size_t uwbsys::DW3000Base::sendExpectResponse(uint8_t *frame, size_t frameSize, uint8_t *buffer, size_t bufferSize, bool isRanging, uint32_t rxOnTime, uint32_t rxTimeout)
+size_t DW3000Base::sendExpectResponse(uint8_t *frame, size_t frameSize, uint8_t *buffer, size_t bufferSize, bool isRanging, uint32_t rxOnTime, uint32_t rxTimeout)
 {
-    frame[uwbsys::FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
+    frame[FRAME_INDEX_SEQUENCE_NUMBER] = this->seqCnt++;
 
     dwt_setrxaftertxdelay(rxOnTime);
     dwt_setrxtimeout(rxTimeout);
@@ -241,7 +242,7 @@ size_t uwbsys::DW3000Base::sendExpectResponse(uint8_t *frame, size_t frameSize, 
     return 0;
 }
 
-size_t uwbsys::DW3000Base::receive(uint8_t *buffer, size_t bufferSize, uint32_t timeout)
+size_t DW3000Base::receive(uint8_t *buffer, size_t bufferSize, uint32_t timeout)
 {
     dwt_setrxtimeout(timeout);
     dwt_rxenable(DWT_START_RX_IMMEDIATE);
@@ -267,7 +268,7 @@ size_t uwbsys::DW3000Base::receive(uint8_t *buffer, size_t bufferSize, uint32_t 
     return 0;
 }
 
-void uwbsys::DW3000Base::receiveHold()
+void DW3000Base::receiveHold()
 {
     if (!this->rxHeld)
     {
@@ -277,7 +278,7 @@ void uwbsys::DW3000Base::receiveHold()
     }
 }
 
-bool uwbsys::DW3000Base::receiveAvailable()
+bool DW3000Base::receiveAvailable()
 {
     if (!((this->statusReg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG_BIT_MASK | SYS_STATUS_ALL_RX_ERR)))
     {
@@ -297,7 +298,7 @@ bool uwbsys::DW3000Base::receiveAvailable()
     }
 }
 
-size_t uwbsys::DW3000Base::receiveCollect(uint8_t *buffer, size_t bufferSize)
+size_t DW3000Base::receiveCollect(uint8_t *buffer, size_t bufferSize)
 {
     size_t frameLength = dwt_read32bitreg(RX_FINFO_ID) & RXFLEN_MASK;
 
