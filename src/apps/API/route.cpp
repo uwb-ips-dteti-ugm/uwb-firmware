@@ -173,7 +173,7 @@ void api::service::onPostServerConfig(WebServer *server)
     }
 
     if (!doc.containsKey("port") ||
-        doc.containsKey("mdns"))
+        !doc.containsKey("mdns"))
     {
         api::response::sendInvalidJSON(server);
         return;
