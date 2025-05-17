@@ -2,7 +2,7 @@
 #define __UWBSERVER_KERNEL_H__
 
 #include <Arduino.h>
-#include "utils.h"
+#include "apps/shared.h"
 #include "middlewares/UWB/server.h"
 
 namespace uws

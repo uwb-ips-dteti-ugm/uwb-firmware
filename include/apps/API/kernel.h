@@ -6,9 +6,10 @@
 #include <ESPmDNS.h>
 #include <WebServer.h>
 #include <LittleFS.h>
-#include "utils.h"
 #include "route.h"
+#include "apps/shared.h"
 #include "apps/UWBServer/kernel.h"
+#include "apps/UWBClient/kernel.h"
 
 namespace api
 {

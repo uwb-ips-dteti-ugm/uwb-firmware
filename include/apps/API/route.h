@@ -5,7 +5,9 @@
 #include <functional>
 #include <ArduinoJson.h>
 #include <WebServer.h>
-#include "utils.h"
+#include "apps/shared.h"
+#include "middlewares/UWB/server.h"
+#include "middlewares/UWB/client.h"
 
 #define API_URL_GET_UWB_CLIENT_INFO "/api/uwb/client/info"
 #define API_URL_GET_UWB_CLIENT_TWR "/api/uwb/client/twr"

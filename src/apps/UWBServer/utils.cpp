@@ -3,6 +3,7 @@
 uws::KernelState uws::utl::rGetKernelState()
 {
     uws::KernelState state = uws::kerReg.kernelState;
+    return state;
 }
 
 void uws::utl::rSetKernelState(uws::KernelState state)
@@ -24,8 +25,18 @@ void uws::utl::rGetClient(uwb::DW3000Server::ClientInfo *clients)
 {
     if (xSemaphoreTake(uws::netInfo.mtx, portMAX_DELAY) == pdTRUE)
     {
-        memcpy(clients, uws::netInfo.clientInfo, uws::netInfo.clientNum);
+        memcpy(clients, uws::netInfo.clientInfo, sizeof(uwb::DW3000Server::ClientInfo) * uws::netInfo.clientNum);
         xSemaphoreGive(uws::netInfo.mtx);
+    }
+}
+
+size_t uws::utl::rGetTWRDataQueueLength()
+{
+    if (xSemaphoreTake(uws::netInfo.mtx, portMAX_DELAY) == pdTRUE)
+    {
+        size_t len = uws::netInfo.twrData.size();
+        xSemaphoreGive(uws::netInfo.mtx);
+        return len;
     }
 }
 
@@ -36,6 +47,7 @@ uwb::DW3000Server::TWRData uws::utl::rGetTWRData()
         uwb::DW3000Server::TWRData data = uws::netInfo.twrData.front();
         uws::netInfo.twrData.pop();
         xSemaphoreGive(uws::netInfo.mtx);
+        return data;
     }
 }
 

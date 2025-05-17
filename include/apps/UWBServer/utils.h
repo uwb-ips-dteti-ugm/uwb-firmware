@@ -16,6 +16,7 @@ namespace uws
 
         uint8_t rGetClientNum();
         void rGetClient(uwb::DW3000Server::ClientInfo *clients);
+        size_t rGetTWRDataQueueLength();
         uwb::DW3000Server::TWRData rGetTWRData();
         void rUpdateNetworkInfo(uwb::DW3000Server *server);
     }

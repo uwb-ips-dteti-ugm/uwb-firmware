@@ -44,8 +44,15 @@ void api::kernelSetup(api::KernelInst *inst)
             uwsInst->networkAddress = api::uwbCfg.networkAddr;
             uwsInst->deviceAddress = api::uwbCfg.deviceAddr;
             uws::run(uwsInst);
-            inst->uwbRunning = true;
         }
+        else
+        {
+            uwc::KernelInst *uwcInst = new uwc::KernelInst;
+            uwcInst->deviceAddress = api::uwbCfg.deviceAddr;
+            uwcInst->mode = (uwb::RangingMode)api::uwbCfg.rangingMode;
+            uwc::run(uwcInst);
+        }
+        inst->uwbRunning = true;
     }
 }
 
@@ -66,6 +73,14 @@ void api::kernelEventRoutine(api::KernelInst *inst)
         case api::trp::types::WIFI_CONNECT:
         {
             api::utl::rSaveWiFiConfig(inst->fs);
+
+            if (inst->srv != nullptr)
+            {
+                inst->srv->stop();
+                delete inst->srv;
+                inst->srv = nullptr;
+            }
+
             api::utl::rSetKernelState(api::KERNEL_STATE_WIFI_ESTABLISH);
             break;
         }
@@ -88,11 +103,21 @@ void api::kernelEventRoutine(api::KernelInst *inst)
             api::utl::rSaveUWBConfig(inst->fs);
             if (!inst->uwbRunning)
             {
-                uws::KernelInst *uwsInst = new uws::KernelInst;
-                uwsInst->clientMax = api::uwbCfg.clientMax;
-                uwsInst->networkAddress = api::uwbCfg.networkAddr;
-                uwsInst->deviceAddress = api::uwbCfg.deviceAddr;
-                uws::run(uwsInst);
+                if (api::utl::rIsUWBServer())
+                {
+                    uws::KernelInst *uwsInst = new uws::KernelInst;
+                    uwsInst->clientMax = api::uwbCfg.clientMax;
+                    uwsInst->networkAddress = api::uwbCfg.networkAddr;
+                    uwsInst->deviceAddress = api::uwbCfg.deviceAddr;
+                    uws::run(uwsInst);
+                }
+                else
+                {
+                    uwc::KernelInst *uwcInst = new uwc::KernelInst;
+                    uwcInst->deviceAddress = api::uwbCfg.deviceAddr;
+                    uwcInst->mode = (uwb::RangingMode)api::uwbCfg.rangingMode;
+                    uwc::run(uwcInst);
+                }
                 inst->uwbRunning = true;
             }
             break;
@@ -164,6 +189,7 @@ void api::kernelMainRoutine(api::KernelInst *inst)
     {
         if (WiFi.status() == WL_CONNECTED)
         {
+
             char mdns[32];
             api::utl::rGetMDNS(mdns);
             MDNS.begin(mdns);

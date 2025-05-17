@@ -24,7 +24,7 @@ namespace uwb
         /*
          * @brief   Set the client network configuration.
          * @param   deviceAddress 2-bytes device address
-         * @param   mode the client ranging mode from `uwbsys::RangingMode`
+         * @param   mode the client ranging mode from `uwb::RangingMode`
          * @return  None
          */
         void networkConfig(uint16_t deviceAddress, RangingMode mode);

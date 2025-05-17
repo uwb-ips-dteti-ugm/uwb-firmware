@@ -62,14 +62,58 @@ std::function<void(void)> api::routeWrapper(WebServer *server, std::function<voi
 
 void api::service::onGetUWBClientInfo(WebServer *server)
 {
-    api::utl::tUWBClientInfo();
-    api::response::sendReceived(server);
+    if (!api::utl::rIsUWBServer())
+    {
+        api::response::sendBadRequest(server);
+        return;
+    }
+
+    uint8_t clientNum = uws::utl::rGetClientNum();
+    uwb::DW3000Server::ClientInfo *cInfo = new uwb::DW3000Server::ClientInfo[clientNum];
+    uws::utl::rGetClient(cInfo);
+
+    JsonDocument doc;
+    JsonArray clientArr = doc["clients"].to<JsonArray>();
+
+    for (uint8_t i = 0; i < clientNum; ++i)
+    {
+        JsonObject obj = clientArr.createNestedObject();
+        obj["address"] = cInfo[i].addr;
+        obj["mode"] = cInfo[i].mode;
+        obj["last_update"] = cInfo[i].lastUpdate;
+    }
+
+    String jsonStr;
+    serializeJson(doc, jsonStr);
+    server->send(200, "application/json", jsonStr.c_str());
+
+    delete[] cInfo;
 }
 
 void api::service::onGetUWBClientTWR(WebServer *server)
 {
-    api::utl::tUWBClientTWR();
-    api::response::sendReceived(server);
+    if (!api::utl::rIsUWBServer())
+    {
+        api::response::sendBadRequest(server);
+        return;
+    }
+
+    JsonDocument doc;
+    JsonArray twrDataArr = doc["twr_data"].to<JsonArray>();
+
+    while (uws::utl::rGetTWRDataQueueLength() > 0)
+    {
+        uwb::DW3000Server::TWRData data = uws::utl::rGetTWRData();
+        JsonObject obj = twrDataArr.createNestedObject();
+        obj["timestamp"] = data.timestamp;
+        obj["addr_1"] = data.addr1;
+        obj["addr_2"] = data.addr2;
+        obj["distance"] = data.distance;
+    }
+
+    String jsonStr;
+    serializeJson(doc, jsonStr);
+    server->send(200, "application/json", jsonStr.c_str());
 }
 
 void api::service::onPostWiFiConnect(WebServer *server)
@@ -181,6 +225,7 @@ void api::service::onPostUWBConfig(WebServer *server)
 
 void api::service::onDeviceRestart(WebServer *server)
 {
+    api::response::sendReceived(server);
     ESP.restart();
 }
 
