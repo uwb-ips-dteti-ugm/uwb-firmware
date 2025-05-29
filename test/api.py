@@ -21,9 +21,9 @@ def wifiConnect():
         'ap_ssid': 'esp32-uwb-server',
         'ap_pass': '12345678',
         # 'sta_ssid': 'DhonanAP',
-        'sta_ssid': 'Ardikostwifi_7',
+        'sta_ssid': 'Pakeqi',
         # 'sta_pass': 'epiepiepi'
-        'sta_pass': 'Ardikost0041'
+        'sta_pass': 'hurufgede'
     }
     res = requests.post(API_URL_POST_WIFI_CONNECT, json=payload)
     
