@@ -161,10 +161,15 @@ void api::kernelMainRoutine(api::KernelInst *inst)
         {
             char ssid[32], pass[32];
             api::utl::rGetWiFiAPCredentials(ssid, pass);
-
             inst->wifi->mode(WIFI_AP);
-            inst->wifi->softAP(ssid, pass);
 
+            uint8_t mac[6];
+            char ussid[32];
+            inst->wifi->softAPmacAddress(mac);
+            snprintf(ussid, 32, "%s_%02x%02x%02x%02x%02x%02x",
+                     ssid, mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+            inst->wifi->softAP(ussid, pass);
             api::utl::rSetKernelState(api::KERNEL_STATE_SERVER_INIT);
         }
         break;

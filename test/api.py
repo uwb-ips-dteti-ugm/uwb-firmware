@@ -1,9 +1,10 @@
 import requests
 
+BASE_URL                        = "http://192.168.4.1" # ESP BASE URL
 # BASE_URL                        = "http://192.168.56.187" # SERVER
 # BASE_URL                        = "http://192.168.56.117" # CLIENT1
 # BASE_URL                        = "http://192.168.56.58" # CLIENT0
-BASE_URL                        = "http://esp32-uwb-server.local"
+# BASE_URL                        = "http://esp32-uwb-server.local"
 # BASE_URL                        = "http://esp32-uwb-client0.local"
 # BASE_URL                        = "http://esp32-uwb-client1.local"
 API_URL_GET_UWB_CLIENT_INFO     = f"{BASE_URL}/api/uwb/client/info"
@@ -17,10 +18,12 @@ API_URL_POST_DEVICE_RESTART     = f"{BASE_URL}/api/device/restart"
 def wifiConnect():
     payload = {
         'autoconnect': False,
-        'ap_ssid': 'esp32-uwb-client1',
+        'ap_ssid': 'esp32-uwb-server',
         'ap_pass': '12345678',
-        'sta_ssid': 'DhonanAP',
-        'sta_pass': 'epiepiepi'
+        # 'sta_ssid': 'DhonanAP',
+        'sta_ssid': 'Ardikostwifi_7',
+        # 'sta_pass': 'epiepiepi'
+        'sta_pass': 'Ardikost0041'
     }
     res = requests.post(API_URL_POST_WIFI_CONNECT, json=payload)
     
@@ -32,7 +35,7 @@ def wifiConnect():
 def serverConfig():
     payload = {
         'port': 80,
-        'mdns': 'esp32-uwb-client0'
+        'mdns': 'esp32-uwb-server'
     }
     res = requests.post(API_URL_POST_SERVER_CONFIG, json=payload)
 
