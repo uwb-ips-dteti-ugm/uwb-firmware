@@ -63,6 +63,11 @@ namespace uwb
         void networkConfig(uint16_t networkAddress, uint16_t deviceAddress);
 
         /*
+         * @brief   Init the bypass mechanism
+         */
+        void initBypass();
+
+        /*
          * @brief   Run an iteration of the UWB server routine.
          * @param   None
          * @return  None

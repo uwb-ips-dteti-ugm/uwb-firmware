@@ -22,10 +22,17 @@ void DW3000Client::networkConfig(uint16_t deviceAddress, RangingMode mode)
     this->rangingMode = mode;
 }
 
+void DW3000Client::initBypass()
+{
+    this->setNetworkAddress(0xABCD);
+    this->serverAddress = 0x0001;
+    this->connected = true;
+}
+
 void DW3000Client::spin()
 {
     this->listen();
-    this->timeoutHandle();
+    // this->timeoutHandle();
 }
 
 bool DW3000Client::isConnected()
@@ -43,21 +50,21 @@ void DW3000Client::listen()
     {
         switch (this->getFrameFunctionCode(this->rxBuffer))
         {
-        case FUNCTION_CODE_AUTHORIZE:
-            this->onEventAuthorize();
-            break;
+            // case FUNCTION_CODE_AUTHORIZE:
+            //     this->onEventAuthorize();
+            //     break;
 
-        case FUNCTION_CODE_NETWORK_UPDATE:
-            this->onEventNetworkUpdate();
-            break;
+            // case FUNCTION_CODE_NETWORK_UPDATE:
+            //     this->onEventNetworkUpdate();
+            //     break;
 
-        case FUNCTION_CODE_CLOCK_SYNC:
-            this->onEventClockSync();
-            break;
+            // case FUNCTION_CODE_CLOCK_SYNC:
+            //     this->onEventClockSync();
+            //     break;
 
-        case FUNCTION_CODE_TDOA_SCHEDULE:
-            this->onEventTDOASchedule();
-            break;
+            // case FUNCTION_CODE_TDOA_SCHEDULE:
+            //     this->onEventTDOASchedule();
+            //     break;
 
         case FUNCTION_CODE_TWR_SCHEDULE:
             this->onEventTWRSchedule();

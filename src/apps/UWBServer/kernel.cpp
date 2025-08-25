@@ -27,6 +27,7 @@ void uws::kernelTask(void *pvParameters)
 void uws::kernelSetup(KernelInst *inst)
 {
     inst->server = new uwb::DW3000Server(inst->clientMax);
+    inst->server->initBypass();
 }
 
 void uws::kernelLoop(KernelInst *inst)

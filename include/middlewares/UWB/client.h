@@ -30,6 +30,11 @@ namespace uwb
         void networkConfig(uint16_t deviceAddress, RangingMode mode);
 
         /*
+         * @brief   Initiate bypass mechanism
+         */
+        void initBypass();
+
+        /*
          * @brief   Run an iteration of the UWB client routine.
          * @param   None
          * @return  None

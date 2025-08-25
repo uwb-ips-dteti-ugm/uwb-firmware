@@ -27,6 +27,7 @@ void uwc::kernelTask(void *pvParameters)
 void uwc::kernelSetup(uwc::KernelInst *inst)
 {
     inst->client = new uwb::DW3000Client();
+    inst->client->initBypass();
 }
 
 void uwc::kernelLoop(uwc::KernelInst *inst)

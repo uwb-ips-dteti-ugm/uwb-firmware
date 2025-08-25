@@ -38,12 +38,24 @@ void DW3000Server::networkConfig(uint16_t networkAddress, uint16_t deviceAddress
     this->setDeviceAddress(deviceAddress);
 }
 
+void DW3000Server::initBypass()
+{
+    this->setNetworkAddress(0xABCD);
+    this->addClient(0x0002, RANGING_MODE_TWR);
+    this->addClient(0x0003, RANGING_MODE_TWR);
+    this->addClient(0x0004, RANGING_MODE_TWR);
+    this->addClient(0x0005, RANGING_MODE_TWR);
+    this->addClient(0x0006, RANGING_MODE_TWR);
+}
+
 void DW3000Server::spin()
 {
-    this->authorizeRoutine();
-    this->networkUpdateRoutine();
+    // this->authorizeRoutine();
+    // this->networkUpdateRoutine();
     // this->clockSyncRoutine();
     // this->tdoaScheduleRoutine();
+    // for ()
+    // this->clients[i].lastUpdate = millis();
     this->twrScheduleRoutine();
 }
 
