@@ -177,6 +177,9 @@ namespace uwb
         QueueHandle_t clientTWRQueue;
         uint16_t clientTWRQueueSize;
 
+        RangingMode rangingMode;
+        bool connected;
+
         uint8_t txBuffer[127];
         uint8_t rxBuffer[127];
 

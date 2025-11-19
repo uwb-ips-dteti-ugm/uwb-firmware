@@ -41,11 +41,14 @@ void DW3000Server::networkConfig(uint16_t networkAddress, uint16_t deviceAddress
 void DW3000Server::initBypass()
 {
     this->setNetworkAddress(0xABCD);
+    this->addClient(0x0001, RANGING_MODE_TWR);
     this->addClient(0x0002, RANGING_MODE_TWR);
     this->addClient(0x0003, RANGING_MODE_TWR);
-    this->addClient(0x0004, RANGING_MODE_TWR);
-    this->addClient(0x0005, RANGING_MODE_TWR);
-    this->addClient(0x0006, RANGING_MODE_TWR);
+    // this->addClient(0x0004, RANGING_MODE_TWR);
+    // this->addClient(0x0005, RANGING_MODE_TWR);
+    // this->addClient(0x0006, RANGING_MODE_TWR);
+    // this->serverAddress = 0x0001;
+    // this->connected = true;
 }
 
 void DW3000Server::spin()

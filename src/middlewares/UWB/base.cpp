@@ -28,12 +28,19 @@ void Base::setOperationMode(OperationMode operationMode)
 
 uint16_t Base::getNetworkAddress()
 {
-    return this->networkAddress;
+    return 0xABCD;
+    // return this->networkAddress;
 }
 
 uint16_t Base::getDeviceAddress()
 {
-    return this->deviceAddress;
+    // return 0x0001; // Server;
+    return 0x0002; // Anchor;
+    // return 0x0003; // Client 1;
+    // return 0x0004; // Client 2;
+    // return 0x0005; // Client 3;
+    // return 0x0006; // Client 4;
+    // return this->deviceAddress;
 }
 
 OperationMode Base::getOperationMode()
@@ -53,9 +60,13 @@ size_t Base::createFrame(uint8_t *buffer, size_t bufferSize, uint16_t destinatio
     buffer[totalLength - 2] = 0x00;
     buffer[FRAME_INDEX_FUNCTION_CODE] = functionCode;
     buffer[FRAME_INDEX_PAYLOAD] = payloadLength;
-    memcpy(buffer + FRAME_INDEX_NETWORK_ADDRESS, &this->networkAddress, sizeof(uint16_t));
+
+    uint16_t netAddr = this->getNetworkAddress();
+    uint16_t devAddr = this->getDeviceAddress();
+
+    memcpy(buffer + FRAME_INDEX_NETWORK_ADDRESS, &netAddr, sizeof(uint16_t));
     memcpy(buffer + FRAME_INDEX_DESTINATION_ADDRESS, &destinationAddress, sizeof(uint16_t));
-    memcpy(buffer + FRAME_INDEX_SOURCE_ADDRESS, &this->deviceAddress, sizeof(uint16_t));
+    memcpy(buffer + FRAME_INDEX_SOURCE_ADDRESS, &devAddr, sizeof(uint16_t));
 
     if (payload != nullptr)
         memcpy(buffer + FRAME_INDEX_PAYLOAD + 1, payload, (size_t)payloadLength);
@@ -107,11 +118,11 @@ bool Base::validateFrame(uint8_t *frame)
         return false;
 
     uint16_t tempAddress = this->getFrameNetworkAddress(frame);
-    if (tempAddress != this->networkAddress)
+    if (tempAddress != this->getNetworkAddress())
         return false;
 
     tempAddress = this->getFrameDestinationAddress(frame);
-    if ((tempAddress != this->deviceAddress) && (tempAddress != 0xFFFF))
+    if ((tempAddress != this->getDeviceAddress()) && (tempAddress != 0xFFFF))
         return false;
 
     return true;

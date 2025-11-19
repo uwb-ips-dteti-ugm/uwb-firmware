@@ -1,5 +1,46 @@
 #include "apps/API/utils.h"
 
+bool api::utl::rIsWiFiAutoConnect()
+{
+    return true;
+    // return (bool)api::wifiCfg.autoConnect;
+}
+
+void api::utl::rGetWiFiSTACredentials(char *ssidBuf, char *passBuf)
+{
+    const char *ssid = "Qi";
+    const char *password = "hurufgede";
+    memcpy(ssidBuf, ssid, 32);
+    memcpy(passBuf, password, 32);
+    // memcpy(ssidBuf, api::wifiCfg.staSSID, 32);
+    // memcpy(passBuf, api::wifiCfg.staPASS, 32);
+}
+
+void api::utl::rGetMDNS(char *buffer)
+{
+    // const char *dns = "server"; 
+    const char *dns = "anchor"; 
+    // const char *dns = "client1"; 
+    // const char *dns = "client2"; 
+    // const char *dns = "client3"; 
+    // const char *dns = "client4"; 
+    memcpy(buffer, dns, 32);
+    // memcpy(buffer, api::srvCfg.mDNS, 32);
+}
+
+bool api::utl::rIsUWBServer()
+{
+    // return true;
+    return false;
+    // return (bool)api::uwbCfg.isServer;
+}
+
+bool api::utl::rIsUWBAutoStart()
+{
+    return true;
+    // return (bool)api::uwbCfg.autoStart;
+}
+
 api::KernelState api::utl::rGetKernelState()
 {
     api::KernelState state = api::kerReg.kernelState;
@@ -36,10 +77,6 @@ void api::utl::rSaveWiFiConfig(fs::LittleFSFS *fs)
     }
 }
 
-bool api::utl::rIsWiFiAutoConnect()
-{
-    return (bool)api::wifiCfg.autoConnect;
-}
 
 void api::utl::rEnableWiFiAutoConnect()
 {
@@ -57,11 +94,6 @@ void api::utl::rGetWiFiAPCredentials(char *ssidBuf, char *passBuf)
     memcpy(passBuf, api::wifiCfg.apPASS, 32);
 }
 
-void api::utl::rGetWiFiSTACredentials(char *ssidBuf, char *passBuf)
-{
-    memcpy(ssidBuf, api::wifiCfg.staSSID, 32);
-    memcpy(passBuf, api::wifiCfg.staPASS, 32);
-}
 
 void api::utl::rSetWiFiAPCredentials(const char *ssid, const char *pass)
 {
@@ -111,11 +143,6 @@ uint16_t api::utl::rGetServerPort()
     return api::srvCfg.port;
 }
 
-void api::utl::rGetMDNS(char *buffer)
-{
-    memcpy(buffer, api::srvCfg.mDNS, 32);
-}
-
 void api::utl::rSetServerPort(uint16_t port)
 {
     api::srvCfg.port = port;
@@ -151,10 +178,7 @@ void api::utl::rSaveUWBConfig(fs::LittleFSFS *fs)
     }
 }
 
-bool api::utl::rIsUWBAutoStart()
-{
-    return (bool)api::uwbCfg.autoStart;
-}
+
 
 void api::utl::rEnableUWBAutoStart()
 {
@@ -164,11 +188,6 @@ void api::utl::rEnableUWBAutoStart()
 void api::utl::rDisableUWBAutoStart()
 {
     api::uwbCfg.autoStart = 0;
-}
-
-bool api::utl::rIsUWBServer()
-{
-    return (bool)api::uwbCfg.isServer;
 }
 
 void api::utl::rSetAsUWBServer()
