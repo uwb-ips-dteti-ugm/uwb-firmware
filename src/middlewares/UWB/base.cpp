@@ -34,8 +34,8 @@ uint16_t Base::getNetworkAddress()
 
 uint16_t Base::getDeviceAddress()
 {
-    // return 0x0001; // Server;
-    return 0x0002; // Anchor;
+    return 0x0001; // Server;
+    // return 0x0002; // Anchor;
     // return 0x0003; // Client 1;
     // return 0x0004; // Client 2;
     // return 0x0005; // Client 3;

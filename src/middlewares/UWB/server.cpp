@@ -43,7 +43,7 @@ void DW3000Server::initBypass()
     this->setNetworkAddress(0xABCD);
     this->addClient(0x0001, RANGING_MODE_TWR);
     this->addClient(0x0002, RANGING_MODE_TWR);
-    this->addClient(0x0003, RANGING_MODE_TWR);
+    // this->addClient(0x0003, RANGING_MODE_TWR);
     // this->addClient(0x0004, RANGING_MODE_TWR);
     // this->addClient(0x0005, RANGING_MODE_TWR);
     // this->addClient(0x0006, RANGING_MODE_TWR);
@@ -266,6 +266,8 @@ void DW3000Server::twrScheduleRoutine()
                         sizeof(double),
                         this->rxBuffer);
 
+                    printf("[TWR][PAIR] 1 recvDist=%.6f\n", recvDist);
+
                     dataCnt += 1.0;
                     dist += recvDist;
                     retrieved = true;
@@ -279,6 +281,11 @@ void DW3000Server::twrScheduleRoutine()
                 data.addr1 = this->clients[i].addr;
                 data.addr2 = this->getDeviceAddress();
                 data.distance = dist;
+
+                printf("[TWR][DATA] 1 :\n");
+                printf("  addr1    = %u\n", data.addr1);
+                printf("  addr2    = %u\n", data.addr2);
+                printf("  distance = %.9f\n", data.distance);
 
                 this->appendTWRData(&data);
             }
@@ -307,12 +314,20 @@ void DW3000Server::twrScheduleRoutine()
                     this->getFramePayload(
                         (uint8_t *)&recvDist,
                         sizeof(double),
-                        this->rxBuffer);
+                        this->rxBuffer
+                    );
+
+                    printf("[TWR][PAIR] 2 recvDist=%.6f\n", recvDist);
 
                     DW3000Server::TWRData data;
                     data.addr1 = this->clients[jdx].addr;
                     data.addr2 = this->clients[idx].addr;
                     data.distance = recvDist;
+
+                    printf("[TWR][DATA] 2 :\n");
+                    printf("  addr1    = %u\n", data.addr1);
+                    printf("  addr2    = %u\n", data.addr2);
+                    printf("  distance = %.9f\n", data.distance);
 
                     this->appendTWRData(&data);
                     break;

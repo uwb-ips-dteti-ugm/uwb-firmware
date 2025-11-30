@@ -18,8 +18,8 @@ void api::utl::rGetWiFiSTACredentials(char *ssidBuf, char *passBuf)
 
 void api::utl::rGetMDNS(char *buffer)
 {
-    // const char *dns = "server"; 
-    const char *dns = "anchor"; 
+    const char *dns = "server"; 
+    // const char *dns = "anchor"; 
     // const char *dns = "client1"; 
     // const char *dns = "client2"; 
     // const char *dns = "client3"; 
@@ -30,8 +30,8 @@ void api::utl::rGetMDNS(char *buffer)
 
 bool api::utl::rIsUWBServer()
 {
-    // return true;
-    return false;
+    return true;
+    // return false;
     // return (bool)api::uwbCfg.isServer;
 }
 
