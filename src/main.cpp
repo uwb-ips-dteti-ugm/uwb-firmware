@@ -1,10 +1,3 @@
-#include "main.h"
+void setup() {}
 
-void setup()
-{
-    app::start();
-}
-
-void loop()
-{
-}
+void loop() {}
