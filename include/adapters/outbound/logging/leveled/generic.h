@@ -28,9 +28,9 @@ namespace ao::logging
         void debug(const char *tag, const char *message, ...) override;
 
     private:
+        static void log(HardwareSerial *serial, const char *level, const char *tag, const char *message, va_list args);
+
         HardwareSerial *serial;
         LogLevel level;
-
-        static void log(HardwareSerial *serial, const char *level, const char *tag, const char *message, va_list args);
     };
 }
