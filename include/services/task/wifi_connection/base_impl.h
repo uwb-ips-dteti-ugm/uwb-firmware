@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdint>
-
 #include "domain/ports/driven/logger/leveled.h"
 #include "domain/ports/driven/wifi/connection.h"
 #include "domain/ports/driving/task/wifi_connection.h"
@@ -13,8 +11,7 @@ namespace services::task::wifi_connection
     public:
         BaseImpl(
             ports::driven::wifi::Connection *connection,
-            ports::driven::logger::Leveled *logger,
-            uint32_t check_interval_ms = 5000);
+            ports::driven::logger::Leveled *logger);
         ~BaseImpl() override = default;
         BaseImpl(const BaseImpl &) = delete;
         BaseImpl &operator=(const BaseImpl &) = delete;
@@ -26,6 +23,5 @@ namespace services::task::wifi_connection
     private:
         ports::driven::wifi::Connection *connection;
         ports::driven::logger::Leveled *logger;
-        uint32_t check_interval_ms;
     };
 }
