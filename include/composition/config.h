@@ -14,6 +14,10 @@
 #define UWB_FIRMWARE_SERVER_HOST ""
 #endif
 
+#ifndef UWB_FIRMWARE_SERVER_PORT
+#define UWB_FIRMWARE_SERVER_PORT 80
+#endif
+
 #ifndef UWB_FIRMWARE_SERVER_PATH
 #define UWB_FIRMWARE_SERVER_PATH "/"
 #endif
@@ -37,15 +41,15 @@ namespace composition::config
     constexpr const char *wifiPassword = UWB_FIRMWARE_WIFI_PASSWORD;
 
     constexpr const char *uwbServerHost = UWB_FIRMWARE_SERVER_HOST;
-    constexpr uint16_t uwbServerPort = 80;
+    constexpr uint16_t uwbServerPort = UWB_FIRMWARE_SERVER_PORT;
     constexpr const char *uwbServerPath = UWB_FIRMWARE_SERVER_PATH;
     constexpr uint32_t uwbServerConnectTimeoutMs = 5000;
 
     constexpr uint32_t wifiTaskCheckIntervalMs = 5000;
     constexpr uint32_t wifiTaskStackDepth = 4096;
-    constexpr uint8_t wifiTaskPriority = 1;
+    constexpr uint8_t wifiTaskPriority = 3;
 
     constexpr uint32_t uwbTaskCheckIntervalMs = 100;
     constexpr uint32_t uwbTaskStackDepth = 8192;
-    constexpr uint8_t uwbTaskPriority = 1;
+    constexpr uint8_t uwbTaskPriority = 9;
 }
