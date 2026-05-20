@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstddef>
+
 #include "domain/ports/driven/wifi/connection.h"
 
 namespace adapters::wifi::connection
@@ -15,5 +17,6 @@ namespace adapters::wifi::connection
         void connect(const char *ssid, const char *password) override;
         void disconnect() override;
         bool isConnected() const override;
+        bool getDeviceId(char *device_id, std::size_t length) const override;
     };
 }

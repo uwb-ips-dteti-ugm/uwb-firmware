@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "domain/models/error.h"
@@ -10,6 +11,7 @@ namespace ports::driving::task
     {
     public:
         virtual ~UWBStateless() = default;
+        virtual bool getDeviceId(char *device_id, std::size_t length) const = 0;
         virtual bool isWiFiConnected() const = 0;
         virtual models::Error sendConnectRequest(const char *device_id) = 0;
         virtual models::Error initiate(

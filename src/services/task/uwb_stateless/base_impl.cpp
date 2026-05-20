@@ -2,6 +2,7 @@
 
 namespace services::task::uwb_stateless
 {
+    constexpr const char *deviceIdTag = "task::uwb_stateless::BaseImpl::getDeviceId";
     constexpr const char *connectTag = "task::uwb_stateless::BaseImpl::sendConnectRequest";
     constexpr const char *initiateTag = "task::uwb_stateless::BaseImpl::initiate";
     constexpr const char *listenTag = "task::uwb_stateless::BaseImpl::listen";
@@ -50,6 +51,19 @@ namespace services::task::uwb_stateless
           ranging(ranging),
           wifi(wifi)
     {
+    }
+
+    bool BaseImpl::getDeviceId(char *device_id, std::size_t length) const
+    {
+        const bool result = wifi->getDeviceId(device_id, length);
+        if (!result)
+        {
+            logger->error(deviceIdTag, "Failed to get device ID");
+            return false;
+        }
+
+        logger->info(deviceIdTag, "Device ID: %s", device_id);
+        return true;
     }
 
     bool BaseImpl::isWiFiConnected() const

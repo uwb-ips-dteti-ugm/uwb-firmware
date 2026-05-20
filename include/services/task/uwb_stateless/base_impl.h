@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "domain/ports/driven/client/uwb_server.h"
@@ -22,6 +23,7 @@ namespace services::task::uwb_stateless
         BaseImpl(const BaseImpl &) = delete;
         BaseImpl &operator=(const BaseImpl &) = delete;
 
+        bool getDeviceId(char *device_id, std::size_t length) const override;
         bool isWiFiConnected() const override;
         models::Error sendConnectRequest(const char *device_id) override;
         models::Error initiate(
