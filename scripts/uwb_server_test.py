@@ -2,15 +2,16 @@
 
 import asyncio
 import json
-import signal
+from contextlib import asynccontextmanager, suppress
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
 try:
-    import websockets
+    import uvicorn
+    from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 except ImportError as error:
-    raise SystemExit("Missing dependency: install with `python3 -m pip install websockets`") from error
+    raise SystemExit("Missing dependency: install with `python3 -m pip install -r scripts/requirements.txt`") from error
 
 
 # Configuration
@@ -23,6 +24,8 @@ PAN_ID = 0x1234
 TIMEOUT_UUS = 6000
 
 DEVICE_ADDRESSES = {
+    # Replace these keys with the real ESP32 device IDs printed by the firmware.
+    # The iteration order defines the poll sequence, e.g. A->B, A->C, B->A.
     "A": 0x1111,
     "B": 0x2222,
     "C": 0x3333,
@@ -42,12 +45,14 @@ REPEAT_SEQUENCE = True
 class DeviceConnection:
     device_id: str
     address: int
-    websocket: Any
+    websocket: WebSocket
     inbox: asyncio.Queue
 
 
 connections: dict[str, DeviceConnection] = {}
 connections_lock = asyncio.Lock()
+stop_event: asyncio.Event | None = None
+sequence_task: asyncio.Task | None = None
 
 
 # Helpers
@@ -75,38 +80,12 @@ def normalize_address(address: str) -> str:
     return normalized
 
 
-def request_path(websocket: Any, path: str | None) -> str:
-    if path is not None:
-        return path
+def websocket_route(address: str) -> str:
+    normalized = normalize_address(address)
+    if normalized == "/":
+        return "/{device_id}"
 
-    legacy_path = getattr(websocket, "path", None)
-    if legacy_path is not None:
-        return legacy_path
-
-    request = getattr(websocket, "request", None)
-    if request is not None:
-        return getattr(request, "path", "/")
-
-    return "/"
-
-
-def parse_device_id(path: str) -> str | None:
-    path = path.split("?", 1)[0]
-    address = normalize_address(ADDRESS)
-
-    if address == "/":
-        device_id = path.strip("/")
-    elif path == address:
-        device_id = ""
-    elif path.startswith(address + "/"):
-        device_id = path[len(address) + 1 :]
-    else:
-        return None
-
-    if not device_id or "/" in device_id:
-        return None
-
-    return device_id
+    return f"{normalized}/{{device_id}}"
 
 
 def build_command(code: int, source_id: str, target_id: str) -> dict[str, Any]:
@@ -147,7 +126,7 @@ async def get_connection(device_id: str) -> DeviceConnection | None:
 
 
 async def send_json(connection: DeviceConnection, payload: dict[str, Any]) -> None:
-    await connection.websocket.send(json.dumps(payload, separators=(",", ":")))
+    await connection.websocket.send_json(payload)
 
 
 async def wait_for_pair_response(source: DeviceConnection, target: DeviceConnection) -> None:
@@ -205,8 +184,8 @@ async def run_sequence() -> None:
             await asyncio.sleep(PAIR_DELAY_S)
 
 
-async def sequence_loop(stop_event: asyncio.Event) -> None:
-    while not stop_event.is_set():
+async def sequence_loop() -> None:
+    while stop_event is not None and not stop_event.is_set():
         device_ids = await connected_device_ids()
         if len(device_ids) < 2:
             await asyncio.sleep(0.25)
@@ -223,7 +202,7 @@ async def sequence_loop(stop_event: asyncio.Event) -> None:
             pass
 
 
-async def register_connection(device_id: str, websocket: Any) -> DeviceConnection:
+async def register_connection(device_id: str, websocket: WebSocket) -> DeviceConnection:
     connection = DeviceConnection(
         device_id=device_id,
         address=DEVICE_ADDRESSES[device_id],
@@ -236,7 +215,8 @@ async def register_connection(device_id: str, websocket: Any) -> DeviceConnectio
         connections[device_id] = connection
 
     if previous is not None:
-        await previous.websocket.close(code=4000, reason="device reconnected")
+        with suppress(Exception):
+            await previous.websocket.close(code=4000, reason="device reconnected")
 
     return connection
 
@@ -248,50 +228,22 @@ async def unregister_connection(connection: DeviceConnection) -> None:
             del connections[connection.device_id]
 
 
-async def handle_message(connection: DeviceConnection, message: Any) -> None:
+async def handle_message(connection: DeviceConnection, message: str) -> None:
     try:
         payload = json.loads(message)
-    except (TypeError, json.JSONDecodeError):
+    except json.JSONDecodeError:
         payload = message
 
     log(f"[RECV] device={connection.device_id} payload={format_payload(payload)}")
     await connection.inbox.put(payload)
 
 
-async def handle_connection(websocket: Any, path: str | None = None) -> None:
-    path = request_path(websocket, path)
-    device_id = parse_device_id(path)
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    global stop_event, sequence_task
 
-    if device_id is None:
-        log(f"[REJECT] path={path} reason=invalid_path")
-        await websocket.close(code=1008, reason="invalid path")
-        return
-
-    if device_id not in DEVICE_ADDRESSES:
-        log(f"[REJECT] device={device_id} reason=unknown_device")
-        await websocket.close(code=1008, reason="unknown device")
-        return
-
-    connection = await register_connection(device_id, websocket)
-    log(f"[CONNECT] device={device_id} address=0x{connection.address:04X} path={path}")
-
-    try:
-        async for message in websocket:
-            await handle_message(connection, message)
-    finally:
-        await unregister_connection(connection)
-        log(f"[DISCONNECT] device={device_id}")
-
-
-async def main() -> None:
     stop_event = asyncio.Event()
-    loop = asyncio.get_running_loop()
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, stop_event.set)
-        except NotImplementedError:
-            pass
+    sequence_task = asyncio.create_task(sequence_loop())
 
     address = normalize_address(ADDRESS)
     log(f"[START] ws://{HOST}:{PORT}{address}/<device_id>")
@@ -299,16 +251,45 @@ async def main() -> None:
     for device_id, address_value in DEVICE_ADDRESSES.items():
         log(f"[CONFIG] device={device_id} address=0x{address_value:04X}")
 
-    async with websockets.serve(handle_connection, HOST, PORT):
-        sequence_task = asyncio.create_task(sequence_loop(stop_event))
-        await stop_event.wait()
-        sequence_task.cancel()
+    yield
 
-        try:
+    if stop_event is not None:
+        stop_event.set()
+
+    if sequence_task is not None:
+        sequence_task.cancel()
+        with suppress(asyncio.CancelledError):
             await sequence_task
-        except asyncio.CancelledError:
-            pass
+
+
+# FastAPI app
+
+
+app = FastAPI(title="UWB Server Test", lifespan=lifespan)
+route = websocket_route(ADDRESS)
+
+
+@app.websocket(route)
+async def handle_connection(websocket: WebSocket, device_id: str) -> None:
+    if device_id not in DEVICE_ADDRESSES:
+        log(f"[REJECT] device={device_id} reason=unknown_device")
+        await websocket.close(code=1008, reason="unknown device")
+        return
+
+    await websocket.accept()
+    connection = await register_connection(device_id, websocket)
+    log(f"[CONNECT] device={device_id} address=0x{connection.address:04X} path={websocket.url.path}")
+
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await handle_message(connection, message)
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await unregister_connection(connection)
+        log(f"[DISCONNECT] device={device_id}")
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    uvicorn.run(app, host=HOST, port=PORT)
