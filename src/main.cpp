@@ -1,8 +1,9 @@
-#include "main.h"
+#include "composition/app.h"
 
 void setup()
 {
-    app::start();
+    static composition::App app;
+    app.run();
 }
 
 void loop()
