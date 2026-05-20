@@ -1,6 +1,8 @@
 .pio
-.venv
-.env
 .vscode
 .agents/
 .codex/
+
+.env
+.venv/
+__pycache__/
