@@ -1,6 +1,6 @@
 #pragma once
 
-namespace po::logging
+namespace ports::driven::logger
 {
     class Leveled
     {

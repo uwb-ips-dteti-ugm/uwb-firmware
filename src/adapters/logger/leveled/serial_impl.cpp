@@ -1,54 +1,58 @@
-#include "adapters/outbound/logging/leveled/generic.h"
+#include "adapters/logger/leveled/serial_impl.h"
 #include <cstdarg>
 #include <cstdio>
 #include <ctime>
 #include <sys/time.h>
 
-namespace ao::logging
+namespace adapters::logger::leveled
 {
-    LeveledGeneric::LeveledGeneric(HardwareSerial *serial, LogLevel level) : serial(serial), level(level) {}
+    SerialImpl::SerialImpl(HardwareSerial *serial, LogLevel level) : serial(serial), level(level) {}
 
-    void LeveledGeneric::error(const char *tag, const char *message, ...)
+    void SerialImpl::error(const char *tag, const char *message, ...)
     {
         if (level < LOG_LEVEL_ERROR)
             return;
+
         va_list args;
         va_start(args, message);
         log(serial, "ERROR", tag, message, args);
         va_end(args);
     }
 
-    void LeveledGeneric::warn(const char *tag, const char *message, ...)
+    void SerialImpl::warn(const char *tag, const char *message, ...)
     {
         if (level < LOG_LEVEL_WARN)
             return;
+
         va_list args;
         va_start(args, message);
         log(serial, "WARN", tag, message, args);
         va_end(args);
     }
 
-    void LeveledGeneric::info(const char *tag, const char *message, ...)
+    void SerialImpl::info(const char *tag, const char *message, ...)
     {
         if (level < LOG_LEVEL_INFO)
             return;
+
         va_list args;
         va_start(args, message);
         log(serial, "INFO", tag, message, args);
         va_end(args);
     }
 
-    void LeveledGeneric::debug(const char *tag, const char *message, ...)
+    void SerialImpl::debug(const char *tag, const char *message, ...)
     {
         if (level < LOG_LEVEL_DEBUG)
             return;
+
         va_list args;
         va_start(args, message);
         log(serial, "DEBUG", tag, message, args);
         va_end(args);
     }
 
-    void LeveledGeneric::log(HardwareSerial *serial, const char *level, const char *tag, const char *message, va_list args)
+    void SerialImpl::log(HardwareSerial *serial, const char *level, const char *tag, const char *message, va_list args)
     {
         struct timeval tv;
         gettimeofday(&tv, nullptr);

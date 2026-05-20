@@ -2,9 +2,9 @@
 
 #include <cstdint>
 #include <Arduino.h>
-#include "ports/outbound/logging/leveled.h"
+#include "domain/ports/driven/logger/leveled.h"
 
-namespace ao::logging
+namespace adapters::logger::leveled
 {
     enum LogLevel : uint8_t
     {
@@ -15,13 +15,14 @@ namespace ao::logging
         LOG_LEVEL_DEBUG
     };
 
-    class LeveledGeneric : public po::logging::Leveled
+    class SerialImpl : public ports::driven::logger::Leveled
     {
     public:
-        LeveledGeneric(HardwareSerial *serial, LogLevel level);
-        ~LeveledGeneric() override = default;
-        LeveledGeneric(const LeveledGeneric &) = delete;
-        LeveledGeneric &operator=(const LeveledGeneric &) = delete;
+        SerialImpl(HardwareSerial *serial, LogLevel level);
+        ~SerialImpl() override = default;
+        SerialImpl(const SerialImpl &) = delete;
+        SerialImpl &operator=(const SerialImpl &) = delete;
+
         void error(const char *tag, const char *message, ...) override;
         void warn(const char *tag, const char *message, ...) override;
         void info(const char *tag, const char *message, ...) override;

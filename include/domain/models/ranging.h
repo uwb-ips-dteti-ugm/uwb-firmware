@@ -1,35 +1,40 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
 
-namespace dom::models
+namespace models
 {
-    enum RangingFunctionCode : uint8_t
+    namespace RangingFrameControl
     {
-        Poll = 0xE0,
-        Resp = 0xE1,
+        constexpr uint16_t ShortAddress = 0x8841;
     };
 
-    enum RangingFrameLength : size_t
+    namespace RangingFunctionCode
     {
-        Poll = 12U,
-        Resp = 20U,
-    };
+        constexpr uint8_t Poll = 0xE0;
+        constexpr uint8_t Resp = 0xE1;
+    }
 
-    enum RangingFrameIndex : uint8_t
+    namespace RangingFrameLength
     {
-        FrameControlLow = 0,
-        FrameControlHigh = 1,
-        SequenceNumber = 2,
-        PanIdLow = 3,
-        PanIdHigh = 4,
-        DestinationAddressLow = 5,
-        DestinationAddressHigh = 6,
-        SourceAddressLow = 7,
-        SourceAddressHigh = 8,
-        FunctionCode = 9,
-        RespPollRxTime = 10,
-        RespRespTxTime = 14
-    };
+        constexpr std::size_t Poll = 12U;
+        constexpr std::size_t Resp = 20U;
+    }
+
+    namespace RangingFrameIndex
+    {
+        constexpr uint8_t FrameControlLow = 0;
+        constexpr uint8_t FrameControlHigh = 1;
+        constexpr uint8_t SequenceNumber = 2;
+        constexpr uint8_t PanIdLow = 3;
+        constexpr uint8_t PanIdHigh = 4;
+        constexpr uint8_t DestinationAddressLow = 5;
+        constexpr uint8_t DestinationAddressHigh = 6;
+        constexpr uint8_t SourceAddressLow = 7;
+        constexpr uint8_t SourceAddressHigh = 8;
+        constexpr uint8_t FunctionCode = 9;
+        constexpr uint8_t RespPollRxTime = 10;
+        constexpr uint8_t RespRespTxTime = 14;
+    }
 }

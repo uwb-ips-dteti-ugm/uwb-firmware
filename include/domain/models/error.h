@@ -2,14 +2,15 @@
 
 #include <cstdint>
 
-namespace dom::models
+namespace models
 {
     enum class Error : uint8_t
     {
         Ok,
         InvalidArgument,
-        Malloc,
+        MemoryAllocation,
         SystemFail,
+        BadState,
         Unimplemented,
         Unknown
     };
@@ -21,11 +22,13 @@ namespace dom::models
         case Error::Ok:
             return "Ok";
         case Error::InvalidArgument:
-            return "Invalid argument error";
-        case Error::Malloc:
-            return "Memory allocation error";
+            return "Invalid argument";
+        case Error::MemoryAllocation:
+            return "Memory allocation";
         case Error::SystemFail:
-            return "System failure error";
+            return "System failure";
+        case Error::BadState:
+            return "Bad state";
         case Error::Unimplemented:
             return "Unimplemented";
         case Error::Unknown:
