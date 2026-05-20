@@ -1,5 +1,6 @@
 .pio
 .venv
+.env
 .vscode
 .agents/
 .codex/
