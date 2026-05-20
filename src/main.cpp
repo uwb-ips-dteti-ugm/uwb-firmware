@@ -1,3 +1,11 @@
-void setup() {}
+#include "composition/app.h"
 
-void loop() {}
+void setup()
+{
+    static composition::App app;
+    app.run();
+}
+
+void loop()
+{
+}
