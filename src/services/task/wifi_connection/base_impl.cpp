@@ -4,6 +4,7 @@ namespace services::task::wifi_connection
 {
     constexpr const char *connectTag = "task::wifi_connection::BaseImpl::connect";
     constexpr const char *disconnectTag = "task::wifi_connection::BaseImpl::disconnect";
+    constexpr const char *isConnectedTag = "task::wifi_connection::BaseImpl::isConnected";
 
     // Service implementations
 
@@ -31,10 +32,10 @@ namespace services::task::wifi_connection
     {
         if (connection->isConnected())
         {
-            logger->info(connectTag, "WiFi is connected");
+            logger->info(isConnectedTag, "WiFi is connected");
             return true;
         }
-        logger->warn(connectTag, "WiFi is not connected");
+        logger->warn(isConnectedTag, "WiFi is not connected");
         return false;
     }
 }
