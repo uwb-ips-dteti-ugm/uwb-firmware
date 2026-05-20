@@ -29,6 +29,12 @@ namespace services::task::wifi_connection
 
     bool BaseImpl::isConnected() const
     {
-        return connection->isConnected();
+        if (connection->isConnected())
+        {
+            logger->info(connectTag, "WiFi is connected");
+            return true;
+        }
+        logger->warn(connectTag, "WiFi is not connected");
+        return false;
     }
 }
