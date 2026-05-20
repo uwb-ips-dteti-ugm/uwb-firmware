@@ -8,11 +8,10 @@
 
 namespace adapters::ranging::stateless
 {
+    constexpr const char *initiateTag = "ranging::stateless::DW3000Impl::initiate";
+    constexpr const char *listenTag = "ranging::stateless::DW3000Impl::listen";
 
     // Helpers
-
-    constexpr const char *initiateTag = "ranging/stateless/DW3000Impl::initiate";
-    constexpr const char *listenTag = "ranging/stateless/DW3000Impl::listen";
 
     constexpr uint8_t lowOrder(uint16_t value)
     {

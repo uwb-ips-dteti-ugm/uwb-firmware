@@ -11,6 +11,7 @@ namespace models
         MemoryAllocation,
         SystemFail,
         BadState,
+        ConnectionRejected,
         Unimplemented,
         Unknown
     };
@@ -29,6 +30,8 @@ namespace models
             return "System failure";
         case Error::BadState:
             return "Bad state";
+        case Error::ConnectionRejected:
+            return "Connection rejected";
         case Error::Unimplemented:
             return "Unimplemented";
         case Error::Unknown:
