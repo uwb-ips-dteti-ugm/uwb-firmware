@@ -31,6 +31,18 @@ namespace adapters::client::uwb_server
         return normalized;
     }
 
+    String normalizeScheme(const char *scheme)
+    {
+        String normalized = scheme ? scheme : "ws";
+        normalized.trim();
+        normalized.toLowerCase();
+
+        if (normalized.endsWith("://"))
+            normalized.remove(normalized.length() - 3);
+
+        return normalized;
+    }
+
     String buildDevicePath(const String &path, const char *device_id)
     {
         String device_path = path;
@@ -38,6 +50,11 @@ namespace adapters::client::uwb_server
             device_path += "/";
         device_path += device_id;
         return device_path;
+    }
+
+    bool isSupportedScheme(const String &scheme)
+    {
+        return scheme == "ws" || scheme == "wss";
     }
 
     models::Error sendJson(
@@ -73,11 +90,13 @@ namespace adapters::client::uwb_server
     WSClientImpl::WSClientImpl(
         ports::driven::logger::Leveled *logger,
         WebSocketsClient *client,
+        const char *scheme,
         const char *host,
         uint16_t port,
         const char *path,
         uint32_t connect_timeout_ms)
         : client(client),
+          scheme(normalizeScheme(scheme)),
           host(host ? host : ""),
           port(port),
           path(normalizePath(path)),
@@ -95,7 +114,7 @@ namespace adapters::client::uwb_server
             return models::Error::InvalidArgument;
         }
 
-        if (client == nullptr || host.length() == 0 || port == 0 || path.length() == 0 || connect_timeout_ms == 0)
+        if (client == nullptr || !isSupportedScheme(scheme) || host.length() == 0 || port == 0 || path.length() == 0 || connect_timeout_ms == 0)
         {
             logger->error(connectTag, "Invalid adapter configuration");
             return models::Error::InvalidArgument;
@@ -103,7 +122,11 @@ namespace adapters::client::uwb_server
 
         const String device_path = buildDevicePath(path, device_id);
         client->disconnect();
-        client->begin(host.c_str(), port, device_path.c_str());
+
+        if (scheme == "wss")
+            client->beginSSL(host.c_str(), port, device_path.c_str());
+        else
+            client->begin(host.c_str(), port, device_path.c_str());
 
         const uint32_t started_at = millis();
         while (!client->isConnected() && millis() - started_at < connect_timeout_ms)
@@ -116,7 +139,8 @@ namespace adapters::client::uwb_server
         {
             logger->error(
                 connectTag,
-                "Connection rejected or timed out (host=%s port=%u path=%s)",
+                "Connection rejected or timed out (scheme=%s host=%s port=%u path=%s)",
+                scheme.c_str(),
                 host.c_str(),
                 static_cast<unsigned int>(port),
                 device_path.c_str());

@@ -31,6 +31,17 @@ def read_port(values):
     return str(parsed)
 
 
+def read_scheme(values):
+    scheme = values.get("UWB_SERVER_SCHEME", "ws").strip().lower()
+    if scheme.endswith("://"):
+        scheme = scheme[:-3]
+
+    if scheme not in ("ws", "wss"):
+        raise ValueError("UWB_SERVER_SCHEME must be ws or wss")
+
+    return scheme
+
+
 project_dir = Path(env["PROJECT_DIR"])
 dotenv = read_dotenv(project_dir / ".env")
 
@@ -38,6 +49,7 @@ env.Append(
     CPPDEFINES=[
         ("UWB_FIRMWARE_WIFI_SSID", env.StringifyMacro(dotenv.get("WIFI_SSID", ""))),
         ("UWB_FIRMWARE_WIFI_PASSWORD", env.StringifyMacro(dotenv.get("WIFI_PASSWORD", ""))),
+        ("UWB_FIRMWARE_SERVER_SCHEME", env.StringifyMacro(read_scheme(dotenv))),
         ("UWB_FIRMWARE_SERVER_HOST", env.StringifyMacro(dotenv.get("UWB_SERVER_HOST", ""))),
         ("UWB_FIRMWARE_SERVER_PORT", read_port(dotenv)),
         ("UWB_FIRMWARE_SERVER_PATH", env.StringifyMacro(dotenv.get("UWB_SERVER_PATH", "/"))),

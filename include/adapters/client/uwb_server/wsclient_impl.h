@@ -16,6 +16,7 @@ namespace adapters::client::uwb_server
         WSClientImpl(
             ports::driven::logger::Leveled *logger,
             WebSocketsClient *client,
+            const char *scheme,
             const char *host,
             uint16_t port,
             const char *path,
@@ -40,6 +41,7 @@ namespace adapters::client::uwb_server
 
     private:
         WebSocketsClient *client;
+        String scheme;
         String host;
         uint16_t port;
         String path;

@@ -63,6 +63,7 @@ namespace composition
           uwb_server(
               &logger,
               &websocket_client,
+              config::uwbServerScheme,
               config::uwbServerHost,
               config::uwbServerPort,
               config::uwbServerPath,

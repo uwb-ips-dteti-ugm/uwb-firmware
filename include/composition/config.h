@@ -14,6 +14,10 @@
 #define UWB_FIRMWARE_SERVER_HOST ""
 #endif
 
+#ifndef UWB_FIRMWARE_SERVER_SCHEME
+#define UWB_FIRMWARE_SERVER_SCHEME "ws"
+#endif
+
 #ifndef UWB_FIRMWARE_SERVER_PORT
 #define UWB_FIRMWARE_SERVER_PORT 80
 #endif
@@ -40,6 +44,7 @@ namespace composition::config
     constexpr const char *wifiSsid = UWB_FIRMWARE_WIFI_SSID;
     constexpr const char *wifiPassword = UWB_FIRMWARE_WIFI_PASSWORD;
 
+    constexpr const char *uwbServerScheme = UWB_FIRMWARE_SERVER_SCHEME;
     constexpr const char *uwbServerHost = UWB_FIRMWARE_SERVER_HOST;
     constexpr uint16_t uwbServerPort = UWB_FIRMWARE_SERVER_PORT;
     constexpr const char *uwbServerPath = UWB_FIRMWARE_SERVER_PATH;
