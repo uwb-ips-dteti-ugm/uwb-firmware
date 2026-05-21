@@ -54,7 +54,7 @@ namespace composition::config
     constexpr uint32_t wifiTaskStackDepth = 4096;
     constexpr uint8_t wifiTaskPriority = 3;
 
-    constexpr uint32_t uwbTaskCheckIntervalMs = 100;
+    constexpr uint32_t uwbTaskCheckIntervalMs = 40;
     constexpr uint32_t uwbTaskStackDepth = 8192;
     constexpr uint8_t uwbTaskPriority = 9;
 }
