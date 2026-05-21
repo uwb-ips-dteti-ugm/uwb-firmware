@@ -52,20 +52,31 @@ namespace adapters::ranging::stateless
                frame[models::RangingFrameIndex::FunctionCode] == function_code;
     }
 
+    models::Error receiveFailureFromStatus(uint32_t status_reg, models::Error timeout_error, models::Error failed_error)
+    {
+        if (status_reg & SYS_STATUS_ALL_RX_TO)
+            return timeout_error;
+
+        return failed_error;
+    }
+
     models::Error receiveFrame(
         ports::driven::logger::Leveled *logger,
         const char *tag,
         uint8_t *buffer,
         std::size_t buffer_len,
         uint32_t *frame_len,
-        uint32_t timeout_uus)
+        uint32_t timeout_uus,
+        models::Error timeout_error,
+        models::Error failed_error,
+        models::Error too_long_error)
     {
         dwt_setrxtimeout(timeout_uus);
 
         if (dwt_rxenable(DWT_START_RX_IMMEDIATE) != DWT_SUCCESS)
         {
             logger->error(tag, "Failed to enable RX (timeout_uus=%lu)", static_cast<unsigned long>(timeout_uus));
-            return models::Error::BadState;
+            return failed_error;
         }
 
         uint32_t status_reg = 0;
@@ -82,7 +93,7 @@ namespace adapters::ranging::stateless
                 "RX failed (status=0x%08lX timeout_uus=%lu)",
                 static_cast<unsigned long>(status_reg),
                 static_cast<unsigned long>(timeout_uus));
-            return models::Error::SystemFail;
+            return receiveFailureFromStatus(status_reg, timeout_error, failed_error);
         }
 
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG_BIT_MASK);
@@ -95,7 +106,7 @@ namespace adapters::ranging::stateless
                 "RX frame too long (frame_len=%lu buffer_len=%u)",
                 static_cast<unsigned long>(*frame_len),
                 static_cast<unsigned int>(buffer_len));
-            return models::Error::SystemFail;
+            return too_long_error;
         }
 
         dwt_readrxdata(buffer, *frame_len, 0);
@@ -153,7 +164,7 @@ namespace adapters::ranging::stateless
                 static_cast<unsigned int>(pan_id),
                 static_cast<unsigned int>(source_address),
                 static_cast<unsigned int>(destination_address));
-            return models::Error::BadState;
+            return models::Error::UwbPollTxFailed;
         }
 
         uint32_t status_reg = 0;
@@ -171,7 +182,7 @@ namespace adapters::ranging::stateless
                 "Response RX failed (status=0x%08lX timeout_uus=%lu)",
                 static_cast<unsigned long>(status_reg),
                 static_cast<unsigned long>(timeout_uus));
-            return models::Error::SystemFail;
+            return receiveFailureFromStatus(status_reg, models::Error::UwbResponseRxTimeout, models::Error::UwbResponseRxFailed);
         }
 
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG_BIT_MASK);
@@ -185,7 +196,7 @@ namespace adapters::ranging::stateless
                 "Response frame too long (frame_len=%lu buffer_len=%u)",
                 static_cast<unsigned long>(frame_len),
                 static_cast<unsigned int>(sizeof(rx_resp)));
-            return models::Error::SystemFail;
+            return models::Error::UwbResponseFrameTooLong;
         }
 
         dwt_readrxdata(rx_resp, frame_len, 0);
@@ -200,7 +211,7 @@ namespace adapters::ranging::stateless
                 static_cast<unsigned int>(getUint16(rx_resp, models::RangingFrameIndex::SourceAddressLow)),
                 static_cast<unsigned int>(getUint16(rx_resp, models::RangingFrameIndex::DestinationAddressLow)),
                 static_cast<unsigned int>(rx_resp[models::RangingFrameIndex::FunctionCode]));
-            return models::Error::SystemFail;
+            return models::Error::UwbUnexpectedResponseFrame;
         }
 
         const uint32_t poll_tx_ts = dwt_readtxtimestamplo32();
@@ -236,7 +247,16 @@ namespace adapters::ranging::stateless
         uint32_t frame_len = 0;
 
         dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_GOOD | SYS_STATUS_ALL_RX_TO | SYS_STATUS_ALL_RX_ERR);
-        const models::Error receive_error = receiveFrame(logger, listenTag, rx_poll, sizeof(rx_poll), &frame_len, timeout_uus);
+        const models::Error receive_error = receiveFrame(
+            logger,
+            listenTag,
+            rx_poll,
+            sizeof(rx_poll),
+            &frame_len,
+            timeout_uus,
+            models::Error::UwbPollRxTimeout,
+            models::Error::UwbPollRxFailed,
+            models::Error::UwbPollFrameTooLong);
         if (receive_error != models::Error::Ok)
             return receive_error;
 
@@ -251,7 +271,7 @@ namespace adapters::ranging::stateless
                 static_cast<unsigned int>(getUint16(rx_poll, models::RangingFrameIndex::SourceAddressLow)),
                 static_cast<unsigned int>(getUint16(rx_poll, models::RangingFrameIndex::DestinationAddressLow)),
                 static_cast<unsigned int>(rx_poll[models::RangingFrameIndex::FunctionCode]));
-            return models::Error::SystemFail;
+            return models::Error::UwbUnexpectedPollFrame;
         }
 
         uint8_t tx_resp[models::RangingFrameLength::Resp] = {};
@@ -277,7 +297,7 @@ namespace adapters::ranging::stateless
                 static_cast<unsigned int>(pan_id),
                 static_cast<unsigned int>(destination_address),
                 static_cast<unsigned int>(source_address));
-            return models::Error::BadState;
+            return models::Error::UwbResponseTxFailed;
         }
 
         while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS_BIT_MASK))

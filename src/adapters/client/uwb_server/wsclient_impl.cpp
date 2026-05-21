@@ -164,6 +164,7 @@ namespace adapters::client::uwb_server
         }
 
         JsonDocument document;
+        document["status"] = "OK";
         document["device_id"] = device_id;
         document["pan_id"] = pan_id;
         document["source_address"] = source_address;
@@ -201,6 +202,7 @@ namespace adapters::client::uwb_server
         }
 
         JsonDocument document;
+        document["status"] = "ERROR";
         document["device_id"] = device_id;
         document["pan_id"] = pan_id;
         document["source_address"] = source_address;

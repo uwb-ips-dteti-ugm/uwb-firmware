@@ -38,7 +38,7 @@ namespace composition::config
     constexpr uint16_t uwbTxAntennaDelay = 16385;
     constexpr uint16_t uwbRxAntennaDelay = 16385;
     constexpr uint32_t uwbPollTxToRespRxDelayUus = 240;
-    constexpr uint32_t uwbPollRxToRespTxDelayUus = 450;
+    constexpr uint32_t uwbPollRxToRespTxDelayUus = 650;
     constexpr uint32_t uwbDefaultResponseRxTimeoutUus = 400;
 
     constexpr const char *wifiSsid = UWB_FIRMWARE_WIFI_SSID;
@@ -54,7 +54,7 @@ namespace composition::config
     constexpr uint32_t wifiTaskStackDepth = 4096;
     constexpr uint8_t wifiTaskPriority = 3;
 
-    constexpr uint32_t uwbTaskCheckIntervalMs = 100;
+    constexpr uint32_t uwbTaskCheckIntervalMs = 20;
     constexpr uint32_t uwbTaskStackDepth = 8192;
     constexpr uint8_t uwbTaskPriority = 9;
 }
