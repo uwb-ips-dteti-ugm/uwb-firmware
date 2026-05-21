@@ -21,7 +21,7 @@ PORT = 8080
 ADDRESS = "/uwb"
 
 PAN_ID = 0x1234
-LISTEN_TIMEOUT_UUS = 300000
+LISTEN_TIMEOUT_UUS = 120000
 RANGING_TIMEOUT_UUS = 12000
 
 DEVICE_ADDRESSES = {
@@ -33,10 +33,9 @@ DEVICE_ADDRESSES = {
 LISTEN_COMMAND_CODE = 300
 INITIATE_COMMAND_CODE = 200
 
-LISTEN_LEAD_TIME_S = 0.10
-PAIR_RESPONSE_TIMEOUT_S = 10.0
-PAIR_DELAY_S = 0.50
-SEQUENCE_DELAY_S = 2.00
+LISTEN_LEAD_TIME_S = 0.05
+PAIR_DELAY_S = 0.05
+SEQUENCE_DELAY_S = 0.01
 REPEAT_SEQUENCE = True
 
 
@@ -45,7 +44,6 @@ class DeviceConnection:
     device_id: str
     address: int
     websocket: WebSocket
-    inbox: asyncio.Queue
 
 
 connections: dict[str, DeviceConnection] = {}
@@ -106,14 +104,6 @@ def format_payload(payload: Any) -> str:
     return str(payload)
 
 
-def drain_queue(queue: asyncio.Queue) -> None:
-    while True:
-        try:
-            queue.get_nowait()
-        except asyncio.QueueEmpty:
-            return
-
-
 async def connected_device_ids() -> list[str]:
     async with connections_lock:
         return [device_id for device_id in DEVICE_ADDRESSES if device_id in connections]
@@ -128,25 +118,12 @@ async def send_json(connection: DeviceConnection, payload: dict[str, Any]) -> No
     await connection.websocket.send_json(payload)
 
 
-async def wait_for_pair_response(source: DeviceConnection, target: DeviceConnection) -> None:
-    try:
-        payload = await asyncio.wait_for(source.inbox.get(), timeout=PAIR_RESPONSE_TIMEOUT_S)
-    except asyncio.TimeoutError:
-        log(f"[TIMEOUT] no source response source={source.device_id} target={target.device_id}")
-        return
-
-    log(f"[PAIR] source response source={source.device_id} target={target.device_id} payload={format_payload(payload)}")
-
-
 async def run_pair(source_id: str, target_id: str) -> None:
     source = await get_connection(source_id)
     target = await get_connection(target_id)
     if source is None or target is None:
         log(f"[SKIP] source={source_id} target={target_id} disconnected")
         return
-
-    drain_queue(source.inbox)
-    drain_queue(target.inbox)
 
     listen_command = build_command(LISTEN_COMMAND_CODE, source_id, target_id, LISTEN_TIMEOUT_UUS)
     initiate_command = build_command(INITIATE_COMMAND_CODE, source_id, target_id, RANGING_TIMEOUT_UUS)
@@ -163,8 +140,6 @@ async def run_pair(source_id: str, target_id: str) -> None:
 
     log(f"[SEND] device={source_id} command=initiate payload={format_payload(initiate_command)}")
     await send_json(source, initiate_command)
-
-    await wait_for_pair_response(source, target)
 
 
 async def run_sequence() -> None:
@@ -206,7 +181,6 @@ async def register_connection(device_id: str, websocket: WebSocket) -> DeviceCon
         device_id=device_id,
         address=DEVICE_ADDRESSES[device_id],
         websocket=websocket,
-        inbox=asyncio.Queue(),
     )
 
     async with connections_lock:
@@ -234,7 +208,6 @@ async def handle_message(connection: DeviceConnection, message: str) -> None:
         payload = message
 
     log(f"[RECV] device={connection.device_id} payload={format_payload(payload)}")
-    await connection.inbox.put(payload)
 
 
 @asynccontextmanager
