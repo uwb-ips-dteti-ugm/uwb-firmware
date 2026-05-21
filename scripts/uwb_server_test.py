@@ -24,11 +24,9 @@ PAN_ID = 0x1234
 TIMEOUT_UUS = 6000
 
 DEVICE_ADDRESSES = {
-    # Replace these keys with the real ESP32 device IDs printed by the firmware.
-    # The iteration order defines the poll sequence, e.g. A->B, A->C, B->A.
-    "A": 0x1111,
-    "B": 0x2222,
-    "C": 0x3333,
+    "E05A1B1FAF98": 0x1111,
+    "A0A3B31FC848": 0x2222,
+    "A0A3B31F3994": 0x3333,
 }
 
 LISTEN_COMMAND_CODE = 300
