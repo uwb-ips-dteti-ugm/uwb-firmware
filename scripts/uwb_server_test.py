@@ -21,7 +21,7 @@ PORT = 8080
 ADDRESS = "/uwb"
 
 PAN_ID = 0x1234
-LISTEN_TIMEOUT_UUS = 120000
+LISTEN_TIMEOUT_UUS = 90000
 RANGING_TIMEOUT_UUS = 12000
 
 DEVICE_ADDRESSES = {
@@ -33,9 +33,9 @@ DEVICE_ADDRESSES = {
 LISTEN_COMMAND_CODE = 300
 INITIATE_COMMAND_CODE = 200
 
-LISTEN_LEAD_TIME_S = 0.05
-PAIR_DELAY_S = 0.12
-SEQUENCE_DELAY_S = 0.01
+LISTEN_LEAD_TIME_S = 0.03
+PAIR_DELAY_S = 0.7
+SEQUENCE_DELAY_S = 0.00
 REPEAT_SEQUENCE = True
 
 
@@ -122,23 +122,15 @@ async def run_pair(source_id: str, target_id: str) -> None:
     source = await get_connection(source_id)
     target = await get_connection(target_id)
     if source is None or target is None:
-        log(f"[SKIP] source={source_id} target={target_id} disconnected")
         return
 
     listen_command = build_command(LISTEN_COMMAND_CODE, source_id, target_id, LISTEN_TIMEOUT_UUS)
     initiate_command = build_command(INITIATE_COMMAND_CODE, source_id, target_id, RANGING_TIMEOUT_UUS)
 
-    log(
-        "[PAIR] "
-        f"source={source_id}(0x{source.address:04X}) "
-        f"target={target_id}(0x{target.address:04X})"
-    )
-    log(f"[SEND] device={target_id} command=listen payload={format_payload(listen_command)}")
     await send_json(target, listen_command)
 
     await asyncio.sleep(LISTEN_LEAD_TIME_S)
 
-    log(f"[SEND] device={source_id} command=initiate payload={format_payload(initiate_command)}")
     await send_json(source, initiate_command)
 
 
@@ -146,8 +138,6 @@ async def run_sequence() -> None:
     device_ids = await connected_device_ids()
     if len(device_ids) < 2:
         return
-
-    log(f"[SEQUENCE] devices={','.join(device_ids)}")
 
     for source_id in device_ids:
         for target_id in device_ids:
@@ -217,17 +207,6 @@ async def lifespan(_: FastAPI):
     stop_event = asyncio.Event()
     sequence_task = asyncio.create_task(sequence_loop())
 
-    address = normalize_address(ADDRESS)
-    log(f"[START] ws://{HOST}:{PORT}{address}/<device_id>")
-    log(
-        "[CONFIG] "
-        f"pan_id=0x{PAN_ID:04X} "
-        f"listen_timeout_uus={LISTEN_TIMEOUT_UUS} "
-        f"ranging_timeout_uus={RANGING_TIMEOUT_UUS}"
-    )
-    for device_id, address_value in DEVICE_ADDRESSES.items():
-        log(f"[CONFIG] device={device_id} address=0x{address_value:04X}")
-
     yield
 
     if stop_event is not None:
@@ -249,13 +228,11 @@ route = websocket_route(ADDRESS)
 @app.websocket(route)
 async def handle_connection(websocket: WebSocket, device_id: str) -> None:
     if device_id not in DEVICE_ADDRESSES:
-        log(f"[REJECT] device={device_id} reason=unknown_device")
         await websocket.close(code=1008, reason="unknown device")
         return
 
     await websocket.accept()
     connection = await register_connection(device_id, websocket)
-    log(f"[CONNECT] device={device_id} address=0x{connection.address:04X} path={websocket.url.path}")
 
     try:
         while True:
@@ -265,7 +242,6 @@ async def handle_connection(websocket: WebSocket, device_id: str) -> None:
         pass
     finally:
         await unregister_connection(connection)
-        log(f"[DISCONNECT] device={device_id}")
 
 
 if __name__ == "__main__":
