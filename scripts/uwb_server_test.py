@@ -21,7 +21,8 @@ PORT = 8080
 ADDRESS = "/uwb"
 
 PAN_ID = 0x1234
-TIMEOUT_UUS = 300000
+LISTEN_TIMEOUT_UUS = 300000
+RANGING_TIMEOUT_UUS = 12000
 
 DEVICE_ADDRESSES = {
     "E05A1B1FAF98": 0x1111,
@@ -86,14 +87,14 @@ def websocket_route(address: str) -> str:
     return f"{normalized}/{{device_id}}"
 
 
-def build_command(code: int, source_id: str, target_id: str) -> dict[str, Any]:
+def build_command(code: int, source_id: str, target_id: str, timeout_uus: int) -> dict[str, Any]:
     return {
         "code": code,
         "args": {
             "pan_id": PAN_ID,
             "destination_address": DEVICE_ADDRESSES[target_id],
             "source_address": DEVICE_ADDRESSES[source_id],
-            "timeout_uus": TIMEOUT_UUS,
+            "timeout_uus": timeout_uus,
         },
     }
 
@@ -147,8 +148,8 @@ async def run_pair(source_id: str, target_id: str) -> None:
     drain_queue(source.inbox)
     drain_queue(target.inbox)
 
-    listen_command = build_command(LISTEN_COMMAND_CODE, source_id, target_id)
-    initiate_command = build_command(INITIATE_COMMAND_CODE, source_id, target_id)
+    listen_command = build_command(LISTEN_COMMAND_CODE, source_id, target_id, LISTEN_TIMEOUT_UUS)
+    initiate_command = build_command(INITIATE_COMMAND_CODE, source_id, target_id, RANGING_TIMEOUT_UUS)
 
     log(
         "[PAIR] "
@@ -245,7 +246,12 @@ async def lifespan(_: FastAPI):
 
     address = normalize_address(ADDRESS)
     log(f"[START] ws://{HOST}:{PORT}{address}/<device_id>")
-    log(f"[CONFIG] pan_id=0x{PAN_ID:04X} timeout_uus={TIMEOUT_UUS}")
+    log(
+        "[CONFIG] "
+        f"pan_id=0x{PAN_ID:04X} "
+        f"listen_timeout_uus={LISTEN_TIMEOUT_UUS} "
+        f"ranging_timeout_uus={RANGING_TIMEOUT_UUS}"
+    )
     for device_id, address_value in DEVICE_ADDRESSES.items():
         log(f"[CONFIG] device={device_id} address=0x{address_value:04X}")
 
